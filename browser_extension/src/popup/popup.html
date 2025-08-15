@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Service</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Flask Service Module -->
+        <div class="module" id="flask-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <div class="module-icon">⚗️</div>
+                    <span>Flask Service</span>
+                </div>
+                <div class="module-status">
+                    <div class="status-dot" id="service-status-dot"></div>
+                    <span class="status-text" id="service-status-text">...</span>
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <div class="control-row">
+                    <div class="toggle-mini">
+                        <input type="checkbox" id="service-toggle">
+                        <label for="service-toggle"></label>
+                    </div>
+                    <div class="buttons-mini">
+                        <button class="btn-mini btn-create" id="install-btn" title="Créer">+</button>
+                        <button class="btn-mini btn-delete" id="uninstall-btn" title="Supprimer" disabled>×</button>
+                        <button class="btn-mini btn-refresh" id="refresh-btn" title="Actualiser">↻</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Axiom Tokens Module -->
+        <div class="module" id="tokens-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <div class="module-icon">🔑</div>
+                    <span>Axiom Tokens</span>
+                </div>
+                <div class="module-status">
+                    <div class="status-dot" id="tokens-status-dot"></div>
+                    <span class="status-text" id="tokens-status-text">...</span>
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <div class="control-row">
+                    <div class="toggle-mini">
+                        <input type="checkbox" id="tokens-sync-toggle">
+                        <label for="tokens-sync-toggle"></label>
+                    </div>
+                    <div class="buttons-mini">
+                        <button class="btn-mini btn-sync" id="tokens-sync-btn" title="Synchroniser">⟲</button>
+                        <button class="btn-mini btn-info" id="tokens-status-btn" title="Statut">ℹ</button>
+                        <button class="btn-mini btn-refresh" id="tokens-refresh-btn" title="Actualiser">↻</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tokens Display Module -->
+        <div class="module" id="tokens-display-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <div class="module-icon">👁️</div>
+                    <span>Tokens Status</span>
+                </div>
+                <div class="module-status">
+                    <div class="status-dot" id="tokens-display-dot"></div>
+                    <span class="status-text" id="tokens-display-text">...</span>
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <div class="tokens-display">
+                    <div class="token-row">
+                        <span class="token-label">Access:</span>
+                        <span class="token-value" id="access-token-display">Non disponible</span>
+                    </div>
+                    <div class="token-row">
+                        <span class="token-label">Refresh:</span>
+                        <span class="token-value" id="refresh-token-display">Non disponible</span>
+                    </div>
+                    <div class="token-row">
+                        <span class="token-label">MAJ:</span>
+                        <span class="token-value" id="tokens-last-update">Jamais</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instant Trade Display Module -->
+        <!-- Corriger la structure du module Instant Trade -->
+        <div class="module" id="instantrade-display-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <div class="module-icon">👓</div>
+                    <span>Instant Trade</span>
+                </div>
+                <div class="module-status">
+                    <div class="status-dot" id="instantrade-display-dot"></div>
+                    <span class="status-text" id="instantrade-display-text">...</span>
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <div class="control-row">
+                    <div class="toggle-mini">
+                        <input type="checkbox" id="instantrade-toggle">
+                        <label for="instantrade-toggle"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Tools Module -->
+        <div class="module" id="app-tools-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <div class="module-icon">🛠️</div>
+                    <span>Outils Application</span>
+                </div>
+                <div class="module-status">
+                    <div class="status-dot" id="app-tools-status-dot"></div>
+                    <span class="status-text" id="app-tools-status-text">...</span>
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <div class="app-tools-grid">
+                    <div class="tool-item" id="trading-dashboard-tool" title="Trading Dashboard">
+                        <div class="tool-icon">📊</div>
+                        <span class="tool-label">Trading</span>
+                        <div class="tool-status-dot" id="trading-status-dot"></div>
+                    </div>
+                    <div class="tool-item" id="backtesting-tool" title="Backtesting App">
+                        <div class="tool-icon">📈</div>
+                        <span class="tool-label">Backtest</span>
+                        <div class="tool-status-dot" id="backtesting-status-dot"></div>
+                    </div>
+                    <div class="tool-item" id="ai-insights-tool" title="AI Insights App">
+                        <div class="tool-icon">🤖</div>
+                        <span class="tool-label">AI Insights</span>
+                        <div class="tool-status-dot" id="ai-insights-status-dot"></div>
+                    </div>
+                    <div class="tool-item" id="api-status-tool" title="Backend API Status">
+                        <div class="tool-icon">⚡</div>
+                        <span class="tool-label">API Status</span>
+                        <div class="tool-status-dot" id="api-status-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Message Toast (UN SEUL) -->
+        <div id="message-toast" class="message-toast hidden">
+            <span id="message-text"></span>
+            <button id="message-close">×</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator hidden">
+            <div class="spinner-mini"></div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  detailed:
+    format: '%(asctime)s - %(name)s - %(levelname)s - [PID:%(process)d] [%(threadName)s] - %(filename)s:%(lineno)d - %(funcName)s() - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  simple:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  console_dev:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt: '%H:%M:%S'
+  
+  console_prod:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  json:
+    format: '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "module": "%(module)s", "function": "%(funcName)s", "line": %(lineno)d, "process_id": %(process)d, "thread_name": "%(threadName)s"}'
+    datefmt: '%Y-%m-%dT%H:%M:%S'
+  
+  performance:
+    format: '%(asctime)s - PERF - %(operation)s - %(duration).3fs - %(success)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+handlers:
+  console_dev:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: console_dev
+    stream: ext://sys.stdout
+  
+  console_prod:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: console_prod
+    stream: ext://sys.stdout
+  
+  file_main:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/axiom_trade.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf-8
+  
+  file_errors:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: detailed
+    filename: logs/axiom_trade_errors.log
+    maxBytes: 5242880  # 5MB
+    backupCount: 3
+    encoding: utf-8
+  
+  file_performance:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: performance
+    filename: logs/axiom_trade_performance.log
+    maxBytes: 20971520  # 20MB
+    backupCount: 10
+    encoding: utf-8
+  
+  file_json:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: json
+    filename: logs/axiom_trade_structured.log
+    maxBytes: 20971520  # 20MB
+    backupCount: 10
+    encoding: utf-8
+  
+  file_api:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: logs/axiom_trade_api.log
+    maxBytes: 15728640  # 15MB
+    backupCount: 7
+    encoding: utf-8
+
+filters:
+  performance_filter:
+    (): src.core.logging_config.PerformanceFilter
+  
+  api_filter:
+    (): src.core.logging_config.ApiFilter
+
+loggers:
+  axiom_trade:
+    level: DEBUG
+    handlers: [file_main, file_errors]
+    propagate: false
+  
+  axiom_trade.api:
+    level: INFO
+    handlers: [file_api]
+    propagate: true
+    filters: [api_filter]
+  
+  axiom_trade.performance:
+    level: DEBUG
+    handlers: [file_performance]
+    propagate: false
+    filters: [performance_filter]
+  
+  # Services spécifiques
+  axiom_trade.token_service:
+    level: DEBUG
+    handlers: [file_main]
+    propagate: true
+  
+  axiom_trade.windows_service:
+    level: DEBUG
+    handlers: [file_main]
+    propagate: true
+  
+  axiom_trade.web_apps:
+    level: INFO
+    handlers: [file_main, file_api]
+    propagate: true
+  
+  # External libraries
+  urllib3:
+    level: WARNING
+    handlers: [file_main]
+    propagate: false
+  
+  requests:
+    level: WARNING
+    handlers: [file_main]
+    propagate: false
+  
+  werkzeug:
+    level: INFO
+    handlers: [file_api]
+    propagate: false
+  
+  flask:
+    level: INFO
+    handlers: [file_api]
+    propagate: false
+  
+  socketio:
+    level: WARNING
+    handlers: [file_main]
+    propagate: false
+  
+  engineio:
+    level: WARNING
+    handlers: [file_main]
+    propagate: false
+
+# Configuration par environnement
+development:
+  loggers:
+    axiom_trade:
+      handlers: [console_dev, file_main, file_errors]
+    root:
+      level: DEBUG
+      handlers: [console_dev, file_main]
+
+production:
+  loggers:
+    axiom_trade:
+      handlers: [console_prod, file_main, file_errors, file_json]
+    root:
+      level: INFO
+      handlers: [console_prod, file_main]
+
+testing:
+  loggers:
+    axiom_trade:
+      level: WARNING
+      handlers: [console_dev]
+    root:
+      level: WARNING
+      handlers: [console_dev]
+
+root:
+  level: INFO
+  handlers: [console_prod, file_main]

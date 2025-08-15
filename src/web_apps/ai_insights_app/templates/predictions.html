@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-crystal-ball me-2"></i>AI Predictions</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshPredictions()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#predictionModal">
+                    <i class="fas fa-plus me-1"></i>New Prediction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Categories -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center h-100 prediction-card">
+            <div class="card-body">
+                <i class="fas fa-dollar-sign fa-3x mb-3"></i>
+                <h5 class="card-title">Price Predictions</h5>
+                <p class="card-text">AI-powered price forecasts for major cryptocurrencies with confidence intervals</p>
+                <a href="{{ url_for('price_predictions') }}" class="btn btn-light">
+                    <i class="fas fa-chart-line me-1"></i>View Predictions
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center h-100 prediction-card">
+            <div class="card-body">
+                <i class="fas fa-heart fa-3x mb-3"></i>
+                <h5 class="card-title">Sentiment Predictions</h5>
+                <p class="card-text">Market sentiment analysis and predictions based on multiple data sources</p>
+                <a href="{{ url_for('sentiment_predictions') }}" class="btn btn-light">
+                    <i class="fas fa-smile me-1"></i>View Sentiment
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center h-100 prediction-card">
+            <div class="card-body">
+                <i class="fas fa-wave-square fa-3x mb-3"></i>
+                <h5 class="card-title">Volatility Forecast</h5>
+                <p class="card-text">Predict market volatility and risk levels for better risk management</p>
+                <a href="{{ url_for('volatility_predictions') }}" class="btn btn-light">
+                    <i class="fas fa-exclamation-triangle me-1"></i>View Volatility
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Recent Predictions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Timeframe</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>BTC/USDT</strong></td>
+                                <td><span class="badge bg-primary">Price</span></td>
+                                <td>$46,200 (+2.1%)</td>
+                                <td>
+                                    <div class="progress" style="width: 80px; height: 20px;">
+                                        <div class="progress-bar bg-success" style="width: 72%">72%</div>
+                                    </div>
+                                </td>
+                                <td>24h</td>
+                                <td><span class="badge bg-warning">Pending</span></td>
+                                <td><small class="text-muted">2 hours ago</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>ETH/USDT</strong></td>
+                                <td><span class="badge bg-info">Sentiment</span></td>
+                                <td>Bullish (0.78)</td>
+                                <td>
+                                    <div class="progress" style="width: 80px; height: 20px;">
+                                        <div class="progress-bar bg-success" style="width: 85%">85%</div>
+                                    </div>
+                                </td>
+                                <td>7d</td>
+                                <td><span class="badge bg-success">Accurate</span></td>
+                                <td><small class="text-muted">1 day ago</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Market</strong></td>
+                                <td><span class="badge bg-warning">Volatility</span></td>
+                                <td>Medium (0.28)</td>
+                                <td>
+                                    <div class="progress" style="width: 80px; height: 20px;">
+                                        <div class="progress-bar bg-warning" style="width: 65%">65%</div>
+                                    </div>
+                                </td>
+                                <td>24h</td>
+                                <td><span class="badge bg-success">Accurate</span></td>
+                                <td><small class="text-muted">6 hours ago</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Accuracy -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Prediction Accuracy Over Time
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="accuracyChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>Model Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h3 class="text-success">78.5%</h3>
+                    <p class="text-muted">Overall Accuracy</p>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Price Predictions</span>
+                        <span class="text-success">82%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: 82%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Sentiment Analysis</span>
+                        <span class="text-success">85%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Volatility Forecast</span>
+                        <span class="text-warning">68%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 68%"></div>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('models_management') }}" class="btn btn-outline-primary w-100">
+                    View Model Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Prediction Modal -->
+<div class="modal fade" id="predictionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Prediction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="predictionForm">
+                    <div class="mb-3">
+                        <label for="predictionType" class="form-label">Prediction Type</label>
+                        <select class="form-select" id="predictionType" required>
+                            <option value="">Select type...</option>
+                            <option value="price">Price Prediction</option>
+                            <option value="sentiment">Sentiment Analysis</option>
+                            <option value="volatility">Volatility Forecast</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="predictionSymbol" class="form-label">Symbol</label>
+                        <input type="text" class="form-control" id="predictionSymbol" placeholder="e.g., BTC/USDT" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="predictionTimeframe" class="form-label">Timeframe</label>
+                        <select class="form-select" id="predictionTimeframe" required>
+                            <option value="">Select timeframe...</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="24h">24 Hours</option>
+                            <option value="7d">7 Days</option>
+                            <option value="30d">30 Days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="predictionModel" class="form-label">AI Model</label>
+                        <select class="form-select" id="predictionModel" required>
+                            <option value="">Select model...</option>
+                            <option value="lstm">LSTM Neural Network</option>
+                            <option value="transformer">Transformer Model</option>
+                            <option value="ensemble">Ensemble Model</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createPrediction()">Create Prediction</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Accuracy Chart
+const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+const accuracyChart = new Chart(accuracyCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+        datasets: [{
+            label: 'Price Predictions',
+            data: [75, 78, 80, 82, 79, 83, 81, 82],
+            borderColor: '#007bff',
+            backgroundColor: '#007bff20',
+            fill: true
+        }, {
+            label: 'Sentiment Analysis',
+            data: [80, 82, 85, 83, 86, 84, 87, 85],
+            borderColor: '#28a745',
+            backgroundColor: '#28a74520',
+            fill: true
+        }, {
+            label: 'Volatility Forecast',
+            data: [65, 68, 70, 67, 72, 69, 71, 68],
+            borderColor: '#ffc107',
+            backgroundColor: '#ffc10720',
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: false,
+                min: 60,
+                max: 90,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.parsed.y + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+function refreshPredictions() {
+    location.reload();
+}
+
+function createPrediction() {
+    const form = document.getElementById('predictionForm');
+    const formData = new FormData(form);
+    
+    const prediction = {
+        type: document.getElementById('predictionType').value,
+        symbol: document.getElementById('predictionSymbol').value,
+        timeframe: document.getElementById('predictionTimeframe').value,
+        model: document.getElementById('predictionModel').value
+    };
+    
+    // Validate form
+    if (!prediction.type || !prediction.symbol || !prediction.timeframe || !prediction.model) {
+        AIInsightsApp.showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const createBtn = document.querySelector('#predictionModal .btn-primary');
+    const originalText = createBtn.innerHTML;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+    createBtn.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('predictionModal'));
+        modal.hide();
+        
+        // Reset form
+        form.reset();
+        
+        // Show success message
+        AIInsightsApp.showNotification(`${prediction.type} prediction created for ${prediction.symbol}`, 'success');
+        
+        // Reset button
+        createBtn.innerHTML = originalText;
+        createBtn.disabled = false;
+        
+        // Refresh predictions table
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }, 2000);
+}
+</script>
+{% endblock %}

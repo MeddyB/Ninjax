@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-robot me-2"></i>
+                Trading Bots
+            </h1>
+            <div>
+                <button class="btn btn-success" onclick="startAllBots()">
+                    <i class="fas fa-play me-2"></i>Start All
+                </button>
+                <button class="btn btn-warning" onclick="stopAllBots()">
+                    <i class="fas fa-stop me-2"></i>Stop All
+                </button>
+                <button class="btn btn-primary" onclick="refreshBots()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bots Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0" id="running-bots">{{ bots|selectattr('status', 'equalto', 'running')|list|length }}</h3>
+                <small>Running Bots</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0" id="stopped-bots">{{ bots|selectattr('status', 'equalto', 'stopped')|list|length }}</h3>
+                <small>Stopped Bots</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0" id="total-pnl">${{ bots|sum(attribute='profit_loss')|round(2) }}</h3>
+                <small>Total P&L Today</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0" id="total-trades-today">{{ bots|sum(attribute='trades_today') }}</h3>
+                <small>Total Trades Today</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bots Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Bot Management
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if bots %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="bots-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Strategy</th>
+                                <th>Pair</th>
+                                <th>Status</th>
+                                <th>P&L Today</th>
+                                <th>Trades Today</th>
+                                <th>Last Update</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bot in bots %}
+                            <tr data-bot-id="{{ bot.id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-robot me-2 text-primary"></i>
+                                        <div>
+                                            <div class="fw-bold">{{ bot.name }}</div>
+                                            <small class="text-muted">{{ bot.description or 'No description' }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ bot.strategy }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ bot.pair }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if bot.status == 'running' %}success{% elif bot.status == 'stopped' %}secondary{% else %}danger{% endif %}">
+                                        <i class="fas {% if bot.status == 'running' %}fa-play{% elif bot.status == 'stopped' %}fa-stop{% else %}fa-exclamation-triangle{% endif %} me-1"></i>
+                                        {{ bot.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="{% if bot.profit_loss > 0 %}text-success{% elif bot.profit_loss < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        {% if bot.profit_loss > 0 %}+{% endif %}${{ bot.profit_loss|round(2) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ bot.trades_today }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ bot.last_update or 'Never' }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('bots.bot_detail', bot_id=bot.id) }}" 
+                                           class="btn btn-outline-info" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if bot.status == 'stopped' %}
+                                        <button class="btn btn-outline-success" 
+                                                onclick="startBot('{{ bot.id }}')" title="Start Bot">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-outline-warning" 
+                                                onclick="stopBot('{{ bot.id }}')" title="Stop Bot">
+                                            <i class="fas fa-stop"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-secondary" 
+                                                onclick="refreshBot('{{ bot.id }}')" title="Refresh Status">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Trading Bots Found</h5>
+                    <p class="text-muted">No trading bots are currently configured in the system.</p>
+                    {% if error_message %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ error_message }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh bots data every 30 seconds
+    setInterval(refreshBots, 30000);
+});
+
+function startBot(botId) {
+    if (!confirm(`Are you sure you want to start bot ${botId}?`)) {
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    fetch(`/bots/api/${botId}/start`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Bot ${botId} started successfully`);
+            setTimeout(refreshBots, 1000);
+        } else {
+            showAlert('danger', `Failed to start bot: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error starting bot:', error);
+        showAlert('danger', `Error starting bot: ${error.message}`);
+    })
+    .finally(() => {
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+    });
+}
+
+function stopBot(botId) {
+    if (!confirm(`Are you sure you want to stop bot ${botId}?`)) {
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    fetch(`/bots/api/${botId}/stop`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Bot ${botId} stopped successfully`);
+            setTimeout(refreshBots, 1000);
+        } else {
+            showAlert('danger', `Failed to stop bot: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping bot:', error);
+        showAlert('danger', `Error stopping bot: ${error.message}`);
+    })
+    .finally(() => {
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+    });
+}
+
+function refreshBot(botId) {
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    fetch(`/bots/api/${botId}/status`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('info', `Bot ${botId} status refreshed`);
+            setTimeout(refreshBots, 500);
+        } else {
+            showAlert('warning', `Could not refresh bot status: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing bot:', error);
+        showAlert('warning', `Error refreshing bot: ${error.message}`);
+    })
+    .finally(() => {
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+    });
+}
+
+function startAllBots() {
+    if (!confirm('Are you sure you want to start ALL bots?')) {
+        return;
+    }
+    
+    const stoppedBots = document.querySelectorAll('tr[data-bot-id] .badge:contains("Stopped")');
+    // TODO: Implement start all functionality
+    showAlert('info', 'Start all bots functionality will be implemented when backend endpoints are available.');
+}
+
+function stopAllBots() {
+    if (!confirm('Are you sure you want to stop ALL bots? This will halt all trading activity.')) {
+        return;
+    }
+    
+    // TODO: Implement stop all functionality
+    showAlert('info', 'Stop all bots functionality will be implemented when backend endpoints are available.');
+}
+
+function refreshBots() {
+    const refreshButton = document.querySelector('button[onclick="refreshBots()"]');
+    const originalHtml = refreshButton.innerHTML;
+    refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshButton.disabled = true;
+    
+    // Reload the page to get fresh data
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert alert at the top of the content
+    const content = document.querySelector('.container-fluid');
+    content.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = content.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

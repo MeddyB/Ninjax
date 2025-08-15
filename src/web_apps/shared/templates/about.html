@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - À propos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    À propos de {{ app_name }}
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    {{ app_name }} fait partie de la plateforme Axiom Trade, une solution complète 
+                    de trading automatisé et d'analyse de marché.
+                </p>
+                
+                <h4>Fonctionnalités principales</h4>
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item">
+                        <i class="fas fa-robot text-primary me-2"></i>
+                        Bots de trading automatisés
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-chart-line text-success me-2"></i>
+                        Analyse de performance en temps réel
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-brain text-info me-2"></i>
+                        Insights alimentés par l'IA
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-history text-warning me-2"></i>
+                        Backtesting de stratégies
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-shield-alt text-danger me-2"></i>
+                        Gestion des risques avancée
+                    </li>
+                </ul>
+                
+                <h4>Architecture</h4>
+                <p>
+                    Cette application fait partie d'une architecture multi-applications qui comprend :
+                </p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Applications Web</h6>
+                        <ul>
+                            <li>Dashboard de Trading</li>
+                            <li>Application de Backtesting</li>
+                            <li>Insights IA</li>
+                            <li>Panel d'Administration</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Services Backend</h6>
+                        <ul>
+                            <li>API Backend principale</li>
+                            <li>Service de gestion des tokens</li>
+                            <li>Service Windows</li>
+                            <li>Proxy API Axiom Trade</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h4>Informations techniques</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><strong>Environnement:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if environment == 'production' else 'warning' }}">
+                                        {{ environment | title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mode Debug:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if debug else 'success' }}">
+                                        {{ 'Activé' if debug else 'Désactivé' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Version Flask:</strong></td>
+                                <td>{{ config.get('FLASK_VERSION', 'N/A') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

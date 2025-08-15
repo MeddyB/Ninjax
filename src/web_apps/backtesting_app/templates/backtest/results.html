@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-chart-area me-2"></i>{{ results.name }}</h1>
+            <div>
+                <a href="{{ url_for('backtest_performance', backtest_id=backtest_id) }}" class="btn btn-info me-2">
+                    <i class="fas fa-analytics me-1"></i>Performance Analysis
+                </a>
+                <a href="{{ url_for('backtest_trades', backtest_id=backtest_id) }}" class="btn btn-success me-2">
+                    <i class="fas fa-list me-1"></i>View Trades
+                </a>
+                <a href="{{ url_for('backtest_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Info -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Backtest Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <strong>Strategy:</strong><br>
+                        <span class="badge bg-primary">{{ results.strategy }}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Market Pair:</strong><br>
+                        {{ results.pair }}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Period:</strong><br>
+                        <small>{{ results.start_date }} to {{ results.end_date }}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Initial Capital:</strong><br>
+                        ${{ "{:,.2f}".format(results.initial_capital) }}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Final Capital:</strong><br>
+                        ${{ "{:,.2f}".format(results.final_capital) }}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{{ 'success' if results.status == 'completed' else 'warning' }}">
+                            {{ results.status|title }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-{{ 'success' if results.total_return > 0 else 'danger' }}">
+                    {{ results.total_return|round(2) }}%
+                </h2>
+                <p class="card-text">Total Return</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-danger">{{ results.max_drawdown|round(2) }}%</h2>
+                <p class="card-text">Max Drawdown</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-{{ 'success' if results.sharpe_ratio > 1 else 'warning' if results.sharpe_ratio > 0 else 'danger' }}">
+                    {{ results.sharpe_ratio|round(2) }}
+                </h2>
+                <p class="card-text">Sharpe Ratio</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-info">{{ results.total_trades }}</h2>
+                <p class="card-text">Total Trades</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Performance Metrics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <strong>Sortino Ratio:</strong>
+                            <span class="float-end">{{ results.sortino_ratio|round(2) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Win Rate:</strong>
+                            <span class="float-end text-{{ 'success' if results.win_rate > 50 else 'danger' }}">
+                                {{ results.win_rate|round(1) }}%
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Profit Factor:</strong>
+                            <span class="float-end text-{{ 'success' if results.profit_factor > 1 else 'danger' }}">
+                                {{ results.profit_factor|round(2) }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <strong>Winning Trades:</strong>
+                            <span class="float-end text-success">{{ results.winning_trades }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Losing Trades:</strong>
+                            <span class="float-end text-danger">{{ results.losing_trades }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Avg Win/Loss:</strong>
+                            <span class="float-end">
+                                <span class="text-success">${{ results.avg_win|round(2) }}</span> / 
+                                <span class="text-danger">${{ results.avg_loss|round(2) }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Best & Worst</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Largest Win:</strong>
+                    <span class="float-end text-success">${{ results.largest_win|round(2) }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Largest Loss:</strong>
+                    <span class="float-end text-danger">${{ results.largest_loss|round(2) }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Max Drawdown (%):</strong>
+                    <span class="float-end text-danger">{{ results.max_drawdown_pct|round(2) }}%</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Total Return (%):</strong>
+                    <span class="float-end text-{{ 'success' if results.total_return_pct > 0 else 'danger' }}">
+                        {{ results.total_return_pct|round(2) }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equity Curve Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Equity Curve</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="equityChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Trades -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Recent Trades</h6>
+                <a href="{{ url_for('backtest_trades', backtest_id=backtest_id) }}" class="btn btn-sm btn-outline-primary">
+                    View All Trades
+                </a>
+            </div>
+            <div class="card-body">
+                {% if results.trades %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Type</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade in results.trades[:10] %}
+                                <tr>
+                                    <td><small>{{ trade.timestamp }}</small></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if trade.type == 'buy' else 'danger' }}">
+                                            {{ trade.type|upper }}
+                                        </span>
+                                    </td>
+                                    <td>${{ "{:,.2f}".format(trade.price) }}</td>
+                                    <td>{{ trade.quantity }}</td>
+                                    <td>
+                                        {% if trade.pnl != 0 %}
+                                            <span class="text-{{ 'success' if trade.pnl > 0 else 'danger' }}">
+                                                ${{ "{:,.2f}".format(trade.pnl) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No trades available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load and render equity curve
+    fetch(`/api/backtest/{{ backtest_id }}/equity-curve`)
+        .then(response => response.json())
+        .then(data => {
+            renderEquityChart(data.equity_curve);
+        })
+        .catch(error => {
+            console.error('Error loading equity curve:', error);
+        });
+});
+
+function renderEquityChart(equityData) {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    
+    const labels = equityData.map(point => point.date);
+    const values = equityData.map(point => point.value);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: values,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Value: $' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

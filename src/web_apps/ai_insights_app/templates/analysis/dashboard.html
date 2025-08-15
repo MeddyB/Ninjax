@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-chart-line me-2"></i>AI Market Analysis</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshAnalysis()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <a href="{{ url_for('portfolio_analysis') }}" class="btn btn-primary">
+                    <i class="fas fa-briefcase me-1"></i>Portfolio Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trading Signals Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-signal me-2"></i>Active Trading Signals
+                </h5>
+                <a href="{{ url_for('trading_signals') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if trading_signals %}
+                    <div class="row">
+                        {% for signal in trading_signals %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card border-{{ 'success' if signal.type == 'BUY' else 'danger' }}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">{{ signal.symbol }}</h6>
+                                            <span class="badge bg-{{ 'success' if signal.type == 'BUY' else 'danger' }}">
+                                                {{ signal.type }}
+                                            </span>
+                                        </div>
+                                        <p class="card-text small mb-2">{{ signal.reasoning[:80] }}...</p>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">Entry</small>
+                                                <div class="fw-bold">${{ "%.2f"|format(signal.entry_price) }}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Target</small>
+                                                <div class="fw-bold">${{ "%.2f"|format(signal.target_price) }}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Confidence</small>
+                                                <div class="fw-bold">{{ "%.0f"|format(signal.confidence * 100) }}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>No active trading signals available
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Market Analysis Tools -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Symbol Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="symbolAnalysisForm">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="symbolInput" placeholder="Enter symbol (e.g., BTC/USDT)" required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search me-1"></i>Analyze
+                        </button>
+                    </div>
+                </form>
+                <div id="symbolAnalysisResult"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-newspaper me-2"></i>Market News Impact
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if news_analysis %}
+                    {% for news in news_analysis %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <h6 class="mb-1">{{ news.title }}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{{ 'success' if news.sentiment == 'Positive' else 'danger' if news.sentiment == 'Negative' else 'secondary' }}">
+                                    {{ news.sentiment }}
+                                </span>
+                                <small class="text-muted">Impact: {{ "%.1f"|format(news.impact_score * 10) }}/10</small>
+                            </div>
+                            <p class="small text-muted mb-0 mt-1">{{ news.ai_analysis }}</p>
+                        </div>
+                    {% endfor %}
+                    <a href="{{ url_for('news_analysis') }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        View All News Analysis
+                    </a>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>No recent news analysis available
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Metrics -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">Market Sentiment</h5>
+                <h3 class="text-success">Bullish</h3>
+                <small class="text-muted">85% confidence</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h5 class="card-title">Volatility</h5>
+                <h3 class="text-warning">Medium</h3>
+                <small class="text-muted">25% current</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-signal fa-2x text-info mb-2"></i>
+                <h5 class="card-title">Active Signals</h5>
+                <h3 class="text-info">{{ trading_signals|length if trading_signals else 0 }}</h3>
+                <small class="text-muted">High confidence</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-percentage fa-2x text-success mb-2"></i>
+                <h5 class="card-title">Accuracy</h5>
+                <h3 class="text-success">78%</h3>
+                <small class="text-muted">Last 30 days</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('symbolAnalysisForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const symbol = document.getElementById('symbolInput').value.trim();
+    if (!symbol) return;
+    
+    const resultDiv = document.getElementById('symbolAnalysisResult');
+    resultDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Analyzing...</div>';
+    
+    fetch(`/api/analysis/market/${encodeURIComponent(symbol)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h6>${data.symbol} Analysis</h6>
+                        <p><strong>Sentiment:</strong> ${data.sentiment.label} (${Math.round(data.sentiment.confidence * 100)}% confidence)</p>
+                        <p><strong>24h Prediction:</strong> ${data.price_prediction.next_24h.direction} (${Math.round(data.price_prediction.next_24h.confidence * 100)}% confidence)</p>
+                        <a href="/analysis/market/${data.symbol}" class="btn btn-sm btn-primary">View Details</a>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        });
+});
+
+function refreshAnalysis() {
+    location.reload();
+}
+</script>
+{% endblock %}

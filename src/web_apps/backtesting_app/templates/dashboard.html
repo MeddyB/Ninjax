@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-chart-line me-2"></i>Backtesting Dashboard</h1>
+            <a href="{{ url_for('new_backtest') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>New Backtest
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- System Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-server me-2"></i>System Status</h5>
+            </div>
+            <div class="card-body">
+                {% if system_status %}
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-{{ 'success' if system_status.status == 'healthy' else 'danger' }} me-2">
+                                    {{ system_status.status|title }}
+                                </span>
+                                <span>Backend API</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">
+                                {% if system_status.message %}
+                                    {{ system_status.message }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">
+                                Environment: {{ environment or 'development' }}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">
+                                App: {{ app_name or 'Backtesting App' }}
+                            </small>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-muted">System status unavailable</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ recent_backtests|length }}</h4>
+                        <p class="mb-0">Total Backtests</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-bar fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">
+                            {{ recent_backtests|selectattr('status', 'equalto', 'completed')|list|length }}
+                        </h4>
+                        <p class="mb-0">Completed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">
+                            {{ recent_backtests|selectattr('status', 'equalto', 'running')|list|length }}
+                        </h4>
+                        <p class="mb-0">Running</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-spinner fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">
+                            {{ recent_backtests|selectattr('status', 'equalto', 'failed')|list|length }}
+                        </h4>
+                        <p class="mb-0">Failed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Backtests -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Backtests</h5>
+                <a href="{{ url_for('backtest_list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_backtests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Strategy</th>
+                                    <th>Pair</th>
+                                    <th>Period</th>
+                                    <th>Status</th>
+                                    <th>Return</th>
+                                    <th>Max DD</th>
+                                    <th>Sharpe</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backtest in recent_backtests %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ backtest.name }}</strong>
+                                    </td>
+                                    <td>{{ backtest.strategy }}</td>
+                                    <td>{{ backtest.pair }}</td>
+                                    <td>
+                                        <small>{{ backtest.start_date }} to {{ backtest.end_date }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if backtest.status == 'completed' else 'warning' if backtest.status == 'running' else 'danger' }}">
+                                            {{ backtest.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if backtest.total_return is not none %}
+                                            <span class="text-{{ 'success' if backtest.total_return > 0 else 'danger' }}">
+                                                {{ backtest.total_return|round(2) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if backtest.max_drawdown is not none %}
+                                            <span class="text-danger">
+                                                {{ backtest.max_drawdown|round(2) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if backtest.sharpe_ratio is not none %}
+                                            {{ backtest.sharpe_ratio|round(2) }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ backtest.created_at.strftime('%Y-%m-%d %H:%M') if backtest.created_at else 'Unknown' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if backtest.status == 'completed' %}
+                                                <a href="{{ url_for('backtest_results', backtest_id=backtest.id) }}" 
+                                                   class="btn btn-outline-primary" title="View Results">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('backtest_performance', backtest_id=backtest.id) }}" 
+                                                   class="btn btn-outline-info" title="Performance Analysis">
+                                                    <i class="fas fa-chart-area"></i>
+                                                </a>
+                                            {% elif backtest.status == 'running' %}
+                                                <button class="btn btn-outline-warning" 
+                                                        onclick="cancelBacktest('{{ backtest.id }}')" title="Cancel">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No backtests yet</h5>
+                        <p class="text-muted">Create your first backtest to get started</p>
+                        <a href="{{ url_for('new_backtest') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Create Backtest
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function cancelBacktest(backtestId) {
+    if (confirm('Are you sure you want to cancel this backtest?')) {
+        fetch(`/api/backtest/${backtestId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'cancelled') {
+                location.reload();
+            } else {
+                alert('Error cancelling backtest: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error cancelling backtest');
+        });
+    }
+}
+
+// Auto-refresh for running backtests
+document.addEventListener('DOMContentLoaded', function() {
+    const runningBacktests = document.querySelectorAll('.badge.bg-warning');
+    if (runningBacktests.length > 0) {
+        // Refresh page every 30 seconds if there are running backtests
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
+    }
+});
+</script>
+{% endblock %}

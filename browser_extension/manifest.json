@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Flask Service Manager",
+  "version": "1.0.0",
+  "description": "Module compact pour gérer le service Windows Flask et synchroniser les tokens Axiom Trade",
+  
+  "permissions": [
+    "cookies",
+    "tabs",
+    "scripting",
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  
+  "host_permissions": [
+    "*://axiom.trade/*",
+    "*://*.axiom.trade/*",
+    "http://localhost:5000/*",
+    "http://localhost:5001/*",
+    "http://localhost:5002/*",
+    "http://localhost:5003/*",
+    "http://localhost:5999/*",
+    "https://api.axiomtrade.io/*"
+  ],
+  
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Flask Service Manager"
+  },
+  
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://axiom.trade/*", 
+        "https://*.axiom.trade/*"
+      ],
+      "js": [
+        "src/content/header-injector.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "options_page": "src/options/options.html",
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["src/**/*.js", "src/**/*.css"],
+      "matches": ["https://axiom.trade/*"]
+    }
+  ]
+}

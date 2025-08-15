@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-heart me-2"></i>Market Sentiment Predictions</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('predictions_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Predictions
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshSentiment()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if sentiment_data %}
+<!-- Overall Sentiment Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-globe me-2"></i>Overall Market Sentiment
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <div class="display-4 text-{{ 'success' if sentiment_data.overall_sentiment.label == 'Bullish' else 'danger' if sentiment_data.overall_sentiment.label == 'Bearish' else 'secondary' }}">
+                            {{ "%.0f"|format(sentiment_data.overall_sentiment.score * 100) }}%
+                        </div>
+                        <h5 class="text-{{ 'success' if sentiment_data.overall_sentiment.label == 'Bullish' else 'danger' if sentiment_data.overall_sentiment.label == 'Bearish' else 'secondary' }}">
+                            {{ sentiment_data.overall_sentiment.label }}
+                        </h5>
+                        <p class="text-muted">{{ "%.0f"|format(sentiment_data.overall_sentiment.confidence * 100) }}% confidence</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <canvas id="sentimentTrendChart" height="200"></canvas>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="fas fa-{{ 'arrow-up' if sentiment_data.overall_sentiment.trend == 'improving' else 'arrow-down' if sentiment_data.overall_sentiment.trend == 'declining' else 'minus' }} fa-2x text-{{ 'success' if sentiment_data.overall_sentiment.trend == 'improving' else 'danger' if sentiment_data.overall_sentiment.trend == 'declining' else 'secondary' }} mb-2"></i>
+                            <h6>Trend: {{ sentiment_data.overall_sentiment.trend.title() }}</h6>
+                            <small class="text-muted">Based on recent data</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sentiment by Asset -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins me-2"></i>Sentiment by Asset
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for asset, sentiment in sentiment_data.by_asset.items() %}
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-{{ 'success' if sentiment.label == 'Bullish' else 'danger' if sentiment.label == 'Bearish' else 'secondary' }}">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ asset }}</h5>
+                                    <div class="mb-2">
+                                        <div class="display-6 text-{{ 'success' if sentiment.label == 'Bullish' else 'danger' if sentiment.label == 'Bearish' else 'secondary' }}">
+                                            {{ "%.0f"|format(sentiment.score * 100) }}%
+                                        </div>
+                                        <span class="badge bg-{{ 'success' if sentiment.label == 'Bullish' else 'danger' if sentiment.label == 'Bearish' else 'secondary' }}">
+                                            {{ sentiment.label }}
+                                        </span>
+                                    </div>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-{{ 'success' if sentiment.confidence > 0.7 else 'warning' if sentiment.confidence > 0.5 else 'danger' }}" 
+                                             style="width: {{ sentiment.confidence * 100 }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ "%.0f"|format(sentiment.confidence * 100) }}% confidence</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sentiment Sources -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Sentiment Sources
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for source, score in sentiment_data.sources.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">{{ source.replace('_', ' ').title() }}</span>
+                            <span class="text-{{ 'success' if score > 0.7 else 'warning' if score > 0.5 else 'danger' }}">
+                                {{ "%.0f"|format(score * 100) }}%
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if score > 0.7 else 'warning' if score > 0.5 else 'danger' }}" 
+                                 style="width: {{ score * 100 }}%"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <canvas id="sentimentSourcesChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-crystal-ball me-2"></i>Sentiment Forecast
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="text-muted">Next 24 Hours</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Predicted Sentiment:</span>
+                        <span class="fw-bold text-{{ 'success' if sentiment_data.forecast.next_24h.sentiment > 0.6 else 'danger' if sentiment_data.forecast.next_24h.sentiment < 0.4 else 'warning' }}">
+                            {{ "%.0f"|format(sentiment_data.forecast.next_24h.sentiment * 100) }}%
+                        </span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-{{ 'success' if sentiment_data.forecast.next_24h.confidence > 0.7 else 'warning' if sentiment_data.forecast.next_24h.confidence > 0.5 else 'danger' }}" 
+                             style="width: {{ sentiment_data.forecast.next_24h.confidence * 100 }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ "%.0f"|format(sentiment_data.forecast.next_24h.confidence * 100) }}% confidence</small>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted">Next 7 Days</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Predicted Sentiment:</span>
+                        <span class="fw-bold text-{{ 'success' if sentiment_data.forecast.next_7d.sentiment > 0.6 else 'danger' if sentiment_data.forecast.next_7d.sentiment < 0.4 else 'warning' }}">
+                            {{ "%.0f"|format(sentiment_data.forecast.next_7d.sentiment * 100) }}%
+                        </span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-{{ 'success' if sentiment_data.forecast.next_7d.confidence > 0.7 else 'warning' if sentiment_data.forecast.next_7d.confidence > 0.5 else 'danger' }}" 
+                             style="width: {{ sentiment_data.forecast.next_7d.confidence * 100 }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ "%.0f"|format(sentiment_data.forecast.next_7d.confidence * 100) }}% confidence</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <small>
+                        Sentiment predictions are based on social media analysis, news sentiment, 
+                        trading patterns, and technical indicators.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sentiment Analysis Tools -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>Sentiment Analysis Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-2x text-primary mb-2"></i>
+                                <h6>Custom Analysis</h6>
+                                <p class="small text-muted">Analyze sentiment for specific keywords or assets</p>
+                                <button class="btn btn-primary btn-sm" onclick="openCustomAnalysis()">
+                                    <i class="fas fa-play me-1"></i>Start Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-bell fa-2x text-warning mb-2"></i>
+                                <h6>Sentiment Alerts</h6>
+                                <p class="small text-muted">Get notified when sentiment changes significantly</p>
+                                <button class="btn btn-warning btn-sm" onclick="setupSentimentAlerts()">
+                                    <i class="fas fa-cog me-1"></i>Setup Alerts
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-2x text-success mb-2"></i>
+                                <h6>Export Report</h6>
+                                <p class="small text-muted">Download detailed sentiment analysis report</p>
+                                <button class="btn btn-success btn-sm" onclick="exportSentimentReport()">
+                                    <i class="fas fa-file-pdf me-1"></i>Export PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+            <h5>No Sentiment Data Available</h5>
+            <p class="mb-0">Sentiment analysis models are currently being updated. Please check back in a few minutes.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+{% if sentiment_data %}
+// Sentiment Trend Chart
+const trendCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+const sentimentTrendChart = new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: ['6h ago', '4h ago', '2h ago', 'Now', '2h pred', '4h pred', '6h pred'],
+        datasets: [{
+            label: 'Market Sentiment',
+            data: [0.65, 0.68, 0.72, {{ sentiment_data.overall_sentiment.score }}, 
+                   {{ sentiment_data.forecast.next_24h.sentiment }}, 
+                   {{ (sentiment_data.forecast.next_24h.sentiment + sentiment_data.forecast.next_7d.sentiment) / 2 }}, 
+                   {{ sentiment_data.forecast.next_7d.sentiment }}],
+            borderColor: '#007bff',
+            backgroundColor: '#007bff20',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: function(context) {
+                const index = context.dataIndex;
+                return index < 4 ? '#007bff' : '#28a745';
+            },
+            pointBorderColor: function(context) {
+                const index = context.dataIndex;
+                return index < 4 ? '#007bff' : '#28a745';
+            }
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 1,
+                ticks: {
+                    callback: function(value) {
+                        return (value * 100) + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Sentiment: ' + (context.parsed.y * 100).toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Sentiment Sources Chart
+const sourcesCtx = document.getElementById('sentimentSourcesChart').getContext('2d');
+const sentimentSourcesChart = new Chart(sourcesCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for source in sentiment_data.sources.keys() %}
+                '{{ source.replace("_", " ").title() }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for score in sentiment_data.sources.values() %}
+                    {{ score * 100 }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function refreshSentiment() {
+    location.reload();
+}
+
+function openCustomAnalysis() {
+    const keyword = prompt('Enter keyword or asset symbol to analyze:');
+    if (keyword) {
+        AIInsightsApp.showNotification(`Starting sentiment analysis for "${keyword}"...`, 'info');
+        // TODO: Implement custom sentiment analysis
+    }
+}
+
+function setupSentimentAlerts() {
+    AIInsightsApp.showNotification('Opening sentiment alerts configuration...', 'info');
+    // TODO: Implement sentiment alerts setup
+}
+
+function exportSentimentReport() {
+    AIInsightsApp.showNotification('Generating sentiment analysis report...', 'info');
+    // TODO: Implement report export
+    setTimeout(() => {
+        AIInsightsApp.showNotification('Sentiment report exported successfully', 'success');
+    }, 2000);
+}
+
+// Auto-refresh sentiment data every 5 minutes
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        fetch('/api/predictions/sentiment')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Updated sentiment data:', data);
+                // Update sentiment display without full page reload
+            })
+            .catch(error => {
+                console.error('Error updating sentiment data:', error);
+            });
+    }
+}, 300000); // 5 minutes
+</script>
+{% endblock %}

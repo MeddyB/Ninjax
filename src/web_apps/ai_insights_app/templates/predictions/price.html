@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-dollar-sign me-2"></i>AI Price Predictions</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('predictions_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Predictions
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshPredictions()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Predictions Grid -->
+<div class="row">
+    {% if predictions %}
+        {% for prediction in predictions %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ prediction.symbol }}</h5>
+                            <span class="badge bg-light text-dark">${{ "%.2f"|format(prediction.current_price) }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-2">Price Predictions</h6>
+                            {% for timeframe, pred in prediction.predictions.items() %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small">{{ timeframe }}</span>
+                                    <div class="text-end">
+                                        <span class="fw-bold text-{{ 'success' if pred.direction == 'up' else 'danger' if pred.direction == 'down' else 'secondary' }}">
+                                            ${{ "%.2f"|format(pred.price) }}
+                                        </span>
+                                        <div class="progress mt-1" style="width: 60px; height: 4px;">
+                                            <div class="progress-bar bg-{{ 'success' if pred.confidence > 0.7 else 'warning' if pred.confidence > 0.5 else 'danger' }}" 
+                                                 style="width: {{ pred.confidence * 100 }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ "%.0f"|format(pred.confidence * 100) }}%</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-2">Support & Resistance</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Support Levels</small>
+                                    {% for level in prediction.support_levels[:2] %}
+                                        <div class="small text-success">${{ "%.0f"|format(level) }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Resistance Levels</small>
+                                    {% for level in prediction.resistance_levels[:2] %}
+                                        <div class="small text-danger">${{ "%.0f"|format(level) }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">Model: {{ prediction.model_used }}</small><br>
+                            <small class="text-muted">Updated: {{ moment(prediction.last_updated).fromNow() if moment else prediction.last_updated }}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewPriceChart('{{ prediction.symbol }}')">
+                                <i class="fas fa-chart-line me-1"></i>Chart
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="viewDetailedPrediction('{{ prediction.symbol }}')">
+                                <i class="fas fa-eye me-1"></i>Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <h5>No Price Predictions Available</h5>
+                <p class="mb-0">Price prediction models are currently being updated. Please check back in a few minutes.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Price Chart Modal -->
+<div class="modal fade" id="priceChartModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartModalTitle">Price Chart</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <canvas id="detailedPriceChart" height="400"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="exportChart()">
+                    <i class="fas fa-download me-1"></i>Export Chart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Prediction Modal -->
+<div class="modal fade" id="detailedPredictionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="predictionModalTitle">Detailed Prediction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailedPredictionContent">
+                <!-- Detailed prediction content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="createPriceAlert()">
+                    <i class="fas fa-bell me-1"></i>Create Alert
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let detailedChart = null;
+
+function refreshPredictions() {
+    location.reload();
+}
+
+function viewPriceChart(symbol) {
+    // Update modal title
+    document.getElementById('chartModalTitle').textContent = `${symbol} Price Chart`;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('priceChartModal'));
+    modal.show();
+    
+    // Wait for modal to be shown, then create chart
+    modal._element.addEventListener('shown.bs.modal', function() {
+        createDetailedChart(symbol);
+    }, { once: true });
+}
+
+function createDetailedChart(symbol) {
+    const ctx = document.getElementById('detailedPriceChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (detailedChart) {
+        detailedChart.destroy();
+    }
+    
+    // Fetch price data and create chart
+    fetch(`/api/predictions/price/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            detailedChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Current', '1h', '4h', '24h', '7d', '30d'],
+                    datasets: [{
+                        label: 'Current Price',
+                        data: [data.current_price, null, null, null, null, null],
+                        borderColor: '#007bff',
+                        backgroundColor: '#007bff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }, {
+                        label: 'Predicted Price',
+                        data: [
+                            data.current_price,
+                            data.predictions['1h'].price,
+                            data.predictions['4h'].price,
+                            data.predictions['24h'].price,
+                            data.predictions['7d'].price,
+                            data.predictions['30d'].price
+                        ],
+                        borderColor: '#28a745',
+                        backgroundColor: '#28a74520',
+                        borderDash: [5, 5],
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Support Levels',
+                        data: data.support_levels.map(() => data.support_levels[0]),
+                        borderColor: '#dc3545',
+                        backgroundColor: '#dc354520',
+                        borderDash: [2, 2],
+                        pointRadius: 0
+                    }, {
+                        label: 'Resistance Levels',
+                        data: data.resistance_levels.map(() => data.resistance_levels[0]),
+                        borderColor: '#ffc107',
+                        backgroundColor: '#ffc10720',
+                        borderDash: [2, 2],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading price data:', error);
+            ctx.fillText('Error loading chart data', 50, 50);
+        });
+}
+
+function viewDetailedPrediction(symbol) {
+    // Update modal title
+    document.getElementById('predictionModalTitle').textContent = `${symbol} Detailed Prediction`;
+    
+    // Show loading state
+    const modalContent = document.getElementById('detailedPredictionContent');
+    modalContent.innerHTML = AIInsightsApp.createLoadingHTML('Loading detailed prediction...');
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('detailedPredictionModal'));
+    modal.show();
+    
+    // Fetch detailed prediction data
+    fetch(`/api/predictions/price/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            modalContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Market Data</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Current Price:</strong></td><td>$${data.current_price.toLocaleString()}</td></tr>
+                            <tr><td><strong>Model Used:</strong></td><td>${data.model_used}</td></tr>
+                            <tr><td><strong>Last Updated:</strong></td><td>${new Date(data.last_updated).toLocaleString()}</td></tr>
+                        </table>
+                        
+                        <h6 class="mt-3">Support Levels</h6>
+                        <ul class="list-unstyled">
+                            ${data.support_levels.map(level => `<li class="text-success">$${level.toLocaleString()}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Prediction Confidence</h6>
+                        <div class="mb-3">
+                            ${Object.entries(data.predictions).map(([timeframe, pred]) => `
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>${timeframe}</span>
+                                    <div class="text-end">
+                                        <div class="progress" style="width: 100px; height: 20px;">
+                                            <div class="progress-bar bg-${pred.confidence > 0.7 ? 'success' : pred.confidence > 0.5 ? 'warning' : 'danger'}" 
+                                                 style="width: ${pred.confidence * 100}%">
+                                                ${Math.round(pred.confidence * 100)}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <h6 class="mt-3">Resistance Levels</h6>
+                        <ul class="list-unstyled">
+                            ${data.resistance_levels.map(level => `<li class="text-danger">$${level.toLocaleString()}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>AI Model Analysis</h6>
+                        <div class="alert alert-info">
+                            <p class="mb-0">
+                                The ${data.model_used} has analyzed historical price patterns, trading volume, 
+                                market sentiment, and technical indicators to generate these predictions. 
+                                The model shows highest confidence in short-term predictions (1h-4h) and 
+                                decreasing confidence for longer timeframes due to increased market uncertainty.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Risk Assessment</h6>
+                        <div class="alert alert-warning">
+                            <p class="mb-0">
+                                <strong>Important:</strong> These predictions are based on AI analysis and should not be 
+                                considered as financial advice. Always conduct your own research and consider your risk 
+                                tolerance before making trading decisions. Cryptocurrency markets are highly volatile 
+                                and unpredictable.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            modalContent.innerHTML = AIInsightsApp.createErrorHTML('Error loading detailed prediction: ' + error.message);
+        });
+}
+
+function exportChart() {
+    if (detailedChart) {
+        const link = document.createElement('a');
+        link.download = 'price-chart.png';
+        link.href = detailedChart.toBase64Image();
+        link.click();
+        
+        AIInsightsApp.showNotification('Chart exported successfully', 'success');
+    }
+}
+
+function createPriceAlert() {
+    AIInsightsApp.showNotification('Price alert created successfully', 'success');
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('detailedPredictionModal'));
+    modal.hide();
+}
+
+// Clean up chart when modal is hidden
+document.getElementById('priceChartModal').addEventListener('hidden.bs.modal', function() {
+    if (detailedChart) {
+        detailedChart.destroy();
+        detailedChart = null;
+    }
+});
+</script>
+{% endblock %}

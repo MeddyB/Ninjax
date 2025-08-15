@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-chart-line me-2"></i>{{ symbol }} Market Analysis</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Analysis
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshAnalysis()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if insights %}
+<!-- Market Overview -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-heart fa-2x text-{{ 'success' if insights.sentiment.label == 'Bullish' else 'danger' if insights.sentiment.label == 'Bearish' else 'secondary' }} mb-2"></i>
+                <h4 class="text-{{ 'success' if insights.sentiment.label == 'Bullish' else 'danger' if insights.sentiment.label == 'Bearish' else 'secondary' }}">
+                    {{ insights.sentiment.label }}
+                </h4>
+                <p class="text-muted">Market Sentiment</p>
+                <small>{{ "%.0f"|format(insights.sentiment.confidence * 100) }}% confidence</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-shield-alt fa-2x text-{{ 'success' if insights.risk_assessment.level == 'Low' else 'danger' if insights.risk_assessment.level == 'High' else 'warning' }} mb-2"></i>
+                <h4 class="text-{{ 'success' if insights.risk_assessment.level == 'Low' else 'danger' if insights.risk_assessment.level == 'High' else 'warning' }}">
+                    {{ insights.risk_assessment.level }}
+                </h4>
+                <p class="text-muted">Risk Level</p>
+                <small>{{ "%.0f"|format(insights.risk_assessment.score * 100) }}% risk score</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                <h4 class="text-info">{{ moment(insights.generated_at).fromNow() if moment else 'Recently' }}</h4>
+                <p class="text-muted">Last Updated</p>
+                <small>{{ insights.generated_at }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Predictions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-crystal-ball me-2"></i>Price Predictions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for timeframe, prediction in insights.price_prediction.items() %}
+                        <div class="col-md-2 col-sm-4 mb-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">{{ timeframe.replace('_', ' ').title() }}</h6>
+                                <h5 class="text-{{ 'success' if prediction.direction == 'up' else 'danger' if prediction.direction == 'down' else 'secondary' }}">
+                                    {{ prediction.direction.upper() }}
+                                </h5>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar bg-{{ 'success' if prediction.confidence > 0.7 else 'warning' if prediction.confidence > 0.5 else 'danger' }}" 
+                                         style="width: {{ prediction.confidence * 100 }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ "%.0f"|format(prediction.confidence * 100) }}% confidence</small>
+                                {% if prediction.range %}
+                                    <div class="mt-1">
+                                        <small class="text-muted">
+                                            ${{ "%.0f"|format(prediction.range[0]) }} - ${{ "%.0f"|format(prediction.range[1]) }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sentiment Factors -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-thumbs-up me-2"></i>Sentiment Factors
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if insights.sentiment.factors %}
+                    <ul class="list-unstyled">
+                        {% for factor in insights.sentiment.factors %}
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                {{ factor }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No specific sentiment factors available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Risk Factors
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if insights.risk_assessment.factors %}
+                    <ul class="list-unstyled">
+                        {% for factor in insights.risk_assessment.factors %}
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                                {{ factor }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No specific risk factors identified</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-area me-2"></i>Price Analysis Chart
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="priceChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No analysis data available for {{ symbol }}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+{% if insights %}
+// Price Analysis Chart
+const priceCtx = document.getElementById('priceChart').getContext('2d');
+const priceChart = new Chart(priceCtx, {
+    type: 'line',
+    data: {
+        labels: ['Current', '1h Pred', '4h Pred', '24h Pred', '7d Pred', '30d Pred'],
+        datasets: [{
+            label: 'Price Prediction',
+            data: [
+                45250, // Current price (mock)
+                {% for timeframe, prediction in insights.price_prediction.items() %}
+                    {% if prediction.range %}
+                        {{ (prediction.range[0] + prediction.range[1]) / 2 }},
+                    {% else %}
+                        null,
+                    {% endif %}
+                {% endfor %}
+            ],
+            borderColor: '#007bff',
+            backgroundColor: '#007bff20',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Price: $' + context.parsed.y.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function refreshAnalysis() {
+    location.reload();
+}
+</script>
+{% endblock %}

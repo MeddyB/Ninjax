@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('strategies.strategies_list') }}">Strategies</a></li>
+                <li class="breadcrumb-item active">Create New Strategy</li>
+            </ol>
+        </nav>
+        <h1 class="mb-4">
+            <i class="fas fa-plus me-2"></i>
+            Create New Trading Strategy
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Strategy Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="strategy-form">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="strategy-name" class="form-label">Strategy Name *</label>
+                            <input type="text" class="form-control" id="strategy-name" name="name" required>
+                            <div class="form-text">Enter a unique name for your strategy</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="strategy-type" class="form-label">Strategy Type *</label>
+                            <select class="form-select" id="strategy-type" name="type" required>
+                                <option value="">Select strategy type...</option>
+                                <option value="scalping">Scalping</option>
+                                <option value="arbitrage">Arbitrage</option>
+                                <option value="dca">Dollar Cost Averaging</option>
+                                <option value="grid">Grid Trading</option>
+                                <option value="momentum">Momentum</option>
+                                <option value="mean_reversion">Mean Reversion</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="strategy-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="strategy-description" name="description" rows="3" 
+                                  placeholder="Describe your trading strategy..."></textarea>
+                    </div>
+                    
+                    <!-- Trading Parameters -->
+                    <h6 class="mb-3">Trading Parameters</h6>
+                    <div id="strategy-parameters">
+                        <!-- Dynamic parameters will be loaded based on strategy type -->
+                        <div class="text-muted text-center py-3">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            Select a strategy type to configure parameters
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Management -->
+                    <h6 class="mb-3 mt-4">Risk Management</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="max-position-size" class="form-label">Max Position Size ($)</label>
+                            <input type="number" class="form-control" id="max-position-size" 
+                                   name="max_position_size" min="0" step="0.01" value="1000">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="stop-loss" class="form-label">Stop Loss (%)</label>
+                            <input type="number" class="form-control" id="stop-loss" 
+                                   name="stop_loss" min="0" max="100" step="0.1" value="2.0">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="take-profit" class="form-label">Take Profit (%)</label>
+                            <input type="number" class="form-control" id="take-profit" 
+                                   name="take_profit" min="0" max="100" step="0.1" value="1.0">
+                        </div>
+                    </div>
+                    
+                    <!-- Trading Pairs -->
+                    <h6 class="mb-3">Trading Pairs</h6>
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <select class="form-select" id="trading-pair-select">
+                                    <option value="">Select a trading pair...</option>
+                                    <option value="BTC/USDT">BTC/USDT</option>
+                                    <option value="ETH/USDT">ETH/USDT</option>
+                                    <option value="ADA/USDT">ADA/USDT</option>
+                                    <option value="DOT/USDT">DOT/USDT</option>
+                                    <option value="LINK/USDT">LINK/USDT</option>
+                                    <option value="SOL/USDT">SOL/USDT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-primary" onclick="addTradingPair()">
+                                    <i class="fas fa-plus me-2"></i>Add Pair
+                                </button>
+                            </div>
+                        </div>
+                        <div id="selected-pairs" class="mt-3">
+                            <!-- Selected pairs will appear here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Active Status -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="strategy-active" name="active" checked>
+                            <label class="form-check-label" for="strategy-active">
+                                Activate strategy immediately after creation
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('strategies.strategies_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary me-2" onclick="validateStrategy()">
+                                <i class="fas fa-check me-2"></i>Validate
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Create Strategy
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Strategy Preview -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>
+                    Strategy Preview
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="strategy-preview">
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p>Fill out the form to see a preview of your strategy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Strategy Templates -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-templates me-2"></i>
+                    Quick Templates
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="loadTemplate('scalping')">
+                        <i class="fas fa-bolt me-2"></i>Scalping Template
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="loadTemplate('arbitrage')">
+                        <i class="fas fa-exchange-alt me-2"></i>Arbitrage Template
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="loadTemplate('dca')">
+                        <i class="fas fa-chart-line me-2"></i>DCA Template
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Help -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Need Help?
+                </h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <p><strong>Strategy Types:</strong></p>
+                    <ul class="list-unstyled">
+                        <li><strong>Scalping:</strong> High-frequency, small profit trades</li>
+                        <li><strong>Arbitrage:</strong> Cross-exchange price differences</li>
+                        <li><strong>DCA:</strong> Regular investment intervals</li>
+                        <li><strong>Grid:</strong> Buy/sell at regular intervals</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let selectedPairs = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for strategy type changes
+    document.getElementById('strategy-type').addEventListener('change', loadStrategyParameters);
+    
+    // Listen for form changes to update preview
+    document.getElementById('strategy-form').addEventListener('input', updateStrategyPreview);
+    
+    // Form submission
+    document.getElementById('strategy-form').addEventListener('submit', handleFormSubmit);
+});
+
+function loadStrategyParameters() {
+    const strategyType = document.getElementById('strategy-type').value;
+    const parametersContainer = document.getElementById('strategy-parameters');
+    
+    if (!strategyType) {
+        parametersContainer.innerHTML = `
+            <div class="text-muted text-center py-3">
+                <i class="fas fa-arrow-up me-2"></i>
+                Select a strategy type to configure parameters
+            </div>
+        `;
+        return;
+    }
+    
+    let parametersHtml = '';
+    
+    switch(strategyType) {
+        case 'scalping':
+            parametersHtml = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Profit Target (%)</label>
+                        <input type="number" class="form-control" name="profit_target" min="0" step="0.01" value="0.5">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Timeframe</label>
+                        <select class="form-select" name="timeframe">
+                            <option value="1m">1 minute</option>
+                            <option value="5m">5 minutes</option>
+                            <option value="15m">15 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Max Positions</label>
+                        <input type="number" class="form-control" name="max_positions" min="1" value="3">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Min Volume</label>
+                        <input type="number" class="form-control" name="min_volume" min="0" value="1000">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'arbitrage':
+            parametersHtml = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Min Profit (%)</label>
+                        <input type="number" class="form-control" name="min_profit" min="0" step="0.01" value="0.2">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Max Exposure ($)</label>
+                        <input type="number" class="form-control" name="max_exposure" min="0" value="1000">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Exchanges</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exchanges" value="binance" checked>
+                        <label class="form-check-label">Binance</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exchanges" value="coinbase">
+                        <label class="form-check-label">Coinbase</label>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'dca':
+            parametersHtml = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Investment Amount ($)</label>
+                        <input type="number" class="form-control" name="investment_amount" min="0" step="0.01" value="100">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select" name="frequency">
+                            <option value="hourly">Hourly</option>
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Max Deviation (%)</label>
+                    <input type="number" class="form-control" name="max_deviation" min="0" step="0.1" value="5.0">
+                </div>
+            `;
+            break;
+            
+        default:
+            parametersHtml = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Parameters for ${strategyType} strategy will be available soon.
+                </div>
+            `;
+    }
+    
+    parametersContainer.innerHTML = parametersHtml;
+    updateStrategyPreview();
+}
+
+function addTradingPair() {
+    const select = document.getElementById('trading-pair-select');
+    const pair = select.value;
+    
+    if (!pair || selectedPairs.includes(pair)) {
+        return;
+    }
+    
+    selectedPairs.push(pair);
+    updateSelectedPairs();
+    select.value = '';
+}
+
+function removeTradingPair(pair) {
+    selectedPairs = selectedPairs.filter(p => p !== pair);
+    updateSelectedPairs();
+}
+
+function updateSelectedPairs() {
+    const container = document.getElementById('selected-pairs');
+    
+    if (selectedPairs.length === 0) {
+        container.innerHTML = '<small class="text-muted">No trading pairs selected</small>';
+        return;
+    }
+    
+    const pairsHtml = selectedPairs.map(pair => `
+        <span class="badge bg-primary me-2 mb-2">
+            ${pair}
+            <button type="button" class="btn-close btn-close-white ms-2" 
+                    onclick="removeTradingPair('${pair}')" style="font-size: 0.7em;"></button>
+        </span>
+    `).join('');
+    
+    container.innerHTML = pairsHtml;
+}
+
+function updateStrategyPreview() {
+    const form = document.getElementById('strategy-form');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    const preview = document.getElementById('strategy-preview');
+    
+    if (!data.name && !data.type) {
+        preview.innerHTML = `
+            <div class="text-muted text-center py-3">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p>Fill out the form to see a preview of your strategy</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const previewHtml = `
+        <div class="mb-3">
+            <h6 class="text-primary">${data.name || 'Unnamed Strategy'}</h6>
+            <span class="badge bg-info">${data.type || 'No Type'}</span>
+        </div>
+        
+        ${data.description ? `<p class="small text-muted">${data.description}</p>` : ''}
+        
+        <div class="small">
+            <div class="d-flex justify-content-between mb-1">
+                <span>Max Position:</span>
+                <strong>$${data.max_position_size || '1000'}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Stop Loss:</span>
+                <strong>${data.stop_loss || '2.0'}%</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Take Profit:</span>
+                <strong>${data.take_profit || '1.0'}%</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Trading Pairs:</span>
+                <strong>${selectedPairs.length || 0}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Status:</span>
+                <span class="badge bg-${data.active ? 'success' : 'secondary'}">
+                    ${data.active ? 'Active' : 'Inactive'}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    preview.innerHTML = previewHtml;
+}
+
+function loadTemplate(templateType) {
+    const templates = {
+        scalping: {
+            name: 'Scalping Strategy',
+            type: 'scalping',
+            description: 'High-frequency trading strategy for small profits',
+            max_position_size: 500,
+            stop_loss: 0.3,
+            take_profit: 0.5,
+            pairs: ['BTC/USDT', 'ETH/USDT']
+        },
+        arbitrage: {
+            name: 'Arbitrage Strategy',
+            type: 'arbitrage',
+            description: 'Cross-exchange arbitrage opportunities',
+            max_position_size: 1000,
+            stop_loss: 1.0,
+            take_profit: 0.2,
+            pairs: ['BTC/USDT', 'ETH/USDT']
+        },
+        dca: {
+            name: 'DCA Strategy',
+            type: 'dca',
+            description: 'Dollar cost averaging investment strategy',
+            max_position_size: 2000,
+            stop_loss: 5.0,
+            take_profit: 10.0,
+            pairs: ['BTC/USDT']
+        }
+    };
+    
+    const template = templates[templateType];
+    if (!template) return;
+    
+    // Fill form with template data
+    document.getElementById('strategy-name').value = template.name;
+    document.getElementById('strategy-type').value = template.type;
+    document.getElementById('strategy-description').value = template.description;
+    document.getElementById('max-position-size').value = template.max_position_size;
+    document.getElementById('stop-loss').value = template.stop_loss;
+    document.getElementById('take-profit').value = template.take_profit;
+    
+    // Set trading pairs
+    selectedPairs = [...template.pairs];
+    updateSelectedPairs();
+    
+    // Load strategy parameters
+    loadStrategyParameters();
+    
+    // Update preview
+    updateStrategyPreview();
+    
+    showAlert('info', `${template.name} template loaded successfully`);
+}
+
+function validateStrategy() {
+    const form = document.getElementById('strategy-form');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    const errors = [];
+    
+    if (!data.name) errors.push('Strategy name is required');
+    if (!data.type) errors.push('Strategy type is required');
+    if (selectedPairs.length === 0) errors.push('At least one trading pair is required');
+    if (!data.max_position_size || data.max_position_size <= 0) errors.push('Max position size must be greater than 0');
+    
+    if (errors.length > 0) {
+        showAlert('danger', 'Validation errors: ' + errors.join(', '));
+        return false;
+    }
+    
+    showAlert('success', 'Strategy validation passed successfully');
+    return true;
+}
+
+function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    if (!validateStrategy()) {
+        return;
+    }
+    
+    const form = document.getElementById('strategy-form');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Add trading pairs to data
+    data.trading_pairs = selectedPairs;
+    
+    // Collect strategy-specific parameters
+    const parameters = {};
+    const parameterInputs = document.querySelectorAll('#strategy-parameters input, #strategy-parameters select');
+    parameterInputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            if (!parameters[input.name]) parameters[input.name] = [];
+            if (input.checked) parameters[input.name].push(input.value);
+        } else {
+            parameters[input.name] = input.value;
+        }
+    });
+    data.parameters = parameters;
+    
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalHtml = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+    submitButton.disabled = true;
+    
+    fetch('/strategies/api/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', 'Strategy created successfully!');
+            setTimeout(() => {
+                window.location.href = '{{ url_for("strategies.strategies_list") }}';
+            }, 2000);
+        } else {
+            showAlert('danger', `Failed to create strategy: ${result.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating strategy:', error);
+        showAlert('danger', `Error creating strategy: ${error.message}`);
+    })
+    .finally(() => {
+        submitButton.innerHTML = originalHtml;
+        submitButton.disabled = false;
+    });
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    const content = document.querySelector('.container-fluid');
+    content.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    setTimeout(() => {
+        const alert = content.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

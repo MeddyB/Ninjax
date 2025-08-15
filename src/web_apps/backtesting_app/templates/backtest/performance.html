@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-analytics me-2"></i>Performance Analysis - {{ results.name }}</h1>
+            <div>
+                <a href="{{ url_for('backtest_results', backtest_id=backtest_id) }}" class="btn btn-info me-2">
+                    <i class="fas fa-chart-area me-1"></i>Results Overview
+                </a>
+                <a href="{{ url_for('backtest_trades', backtest_id=backtest_id) }}" class="btn btn-success me-2">
+                    <i class="fas fa-list me-1"></i>View Trades
+                </a>
+                <a href="{{ url_for('backtest_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Equity Curve</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="equityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-area me-2"></i>Drawdown</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="drawdownChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Metrics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Risk Metrics</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Sharpe Ratio:</strong>
+                    <span class="float-end metric-{{ 'positive' if results.sharpe_ratio > 1 else 'neutral' if results.sharpe_ratio > 0 else 'negative' }}">
+                        {{ results.sharpe_ratio|round(3) }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Sortino Ratio:</strong>
+                    <span class="float-end metric-{{ 'positive' if results.sortino_ratio > 1 else 'neutral' if results.sortino_ratio > 0 else 'negative' }}">
+                        {{ results.sortino_ratio|round(3) }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Max Drawdown:</strong>
+                    <span class="float-end metric-negative">{{ results.max_drawdown|round(2) }}%</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Recovery Factor:</strong>
+                    <span class="float-end metric-{{ 'positive' if performance_metrics.recovery_factor > 2 else 'neutral' }}">
+                        {{ performance_metrics.recovery_factor|round(2) }}
+                    </span>
+                </div>
+                <div class="mb-0">
+                    <strong>Calmar Ratio:</strong>
+                    <span class="float-end metric-{{ 'positive' if performance_metrics.calmar_ratio > 0.5 else 'neutral' }}">
+                        {{ performance_metrics.calmar_ratio|round(3) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Trade Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Win Rate:</strong>
+                    <span class="float-end metric-{{ 'positive' if results.win_rate > 60 else 'neutral' if results.win_rate > 40 else 'negative' }}">
+                        {{ results.win_rate|round(1) }}%
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Profit Factor:</strong>
+                    <span class="float-end metric-{{ 'positive' if results.profit_factor > 1.5 else 'neutral' if results.profit_factor > 1 else 'negative' }}">
+                        {{ results.profit_factor|round(2) }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Avg Trade Duration:</strong>
+                    <span class="float-end">{{ performance_metrics.avg_trade_duration }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Consecutive Wins:</strong>
+                    <span class="float-end text-success">{{ performance_metrics.consecutive_wins }}</span>
+                </div>
+                <div class="mb-0">
+                    <strong>Consecutive Losses:</strong>
+                    <span class="float-end text-danger">{{ performance_metrics.consecutive_losses }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Best/Worst Periods</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Best Month:</strong>
+                    <span class="float-end text-success">{{ performance_metrics.best_month }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Worst Month:</strong>
+                    <span class="float-end text-danger">{{ performance_metrics.worst_month }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Largest Win:</strong>
+                    <span class="float-end text-success">${{ results.largest_win|round(2) }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Largest Loss:</strong>
+                    <span class="float-end text-danger">${{ results.largest_loss|round(2) }}</span>
+                </div>
+                <div class="mb-0">
+                    <strong>Avg Win/Loss:</strong>
+                    <span class="float-end">
+                        {{ (results.avg_win / abs(results.avg_loss))|round(2) }}:1
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Returns -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Monthly Returns</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyReturnsChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load charts data
+    Promise.all([
+        fetch(`/api/backtest/{{ backtest_id }}/equity-curve`),
+        fetch(`/api/backtest/{{ backtest_id }}/drawdown`),
+        fetch(`/api/backtest/{{ backtest_id }}/monthly-returns`)
+    ])
+    .then(responses => Promise.all(responses.map(r => r.json())))
+    .then(([equityData, drawdownData, monthlyData]) => {
+        renderEquityChart(equityData.equity_curve);
+        renderDrawdownChart(drawdownData.drawdown);
+        renderMonthlyReturnsChart(monthlyData.monthly_returns);
+    })
+    .catch(error => {
+        console.error('Error loading chart data:', error);
+    });
+});
+
+function renderEquityChart(equityData) {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    
+    const labels = equityData.map(point => point.date);
+    const values = equityData.map(point => point.value);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: values,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.1,
+                fill: true,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+function renderDrawdownChart(drawdownData) {
+    const ctx = document.getElementById('drawdownChart').getContext('2d');
+    
+    const labels = drawdownData.map(point => point.date);
+    const values = drawdownData.map(point => point.drawdown);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Drawdown',
+                data: values,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.1,
+                fill: true,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    max: 0,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+function renderMonthlyReturnsChart(monthlyData) {
+    const ctx = document.getElementById('monthlyReturnsChart').getContext('2d');
+    
+    const labels = monthlyData.map(point => point.month);
+    const values = monthlyData.map(point => point.return);
+    const colors = values.map(value => value >= 0 ? '#198754' : '#dc3545');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Monthly Return (%)',
+                data: values,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

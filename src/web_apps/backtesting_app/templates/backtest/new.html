@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-plus me-2"></i>New Backtest</h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Backtest Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_backtest_route') }}" id="backtestForm">
+                    <!-- Basic Configuration -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Backtest Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   placeholder="e.g., Scalping Strategy Test">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="strategy_id" class="form-label">Strategy *</label>
+                            <select class="form-select" id="strategy_id" name="strategy_id" required>
+                                <option value="">Select a strategy...</option>
+                                {% for strategy in strategies %}
+                                    <option value="{{ strategy.id }}" data-description="{{ strategy.description }}">
+                                        {{ strategy.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="market_pair" class="form-label">Market Pair *</label>
+                            <select class="form-select" id="market_pair" name="market_pair" required>
+                                <option value="">Select a pair...</option>
+                                {% for pair in market_pairs %}
+                                    <option value="{{ pair }}">{{ pair }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="initial_capital" class="form-label">Initial Capital (USD)</label>
+                            <input type="number" class="form-control" id="initial_capital" name="initial_capital" 
+                                   value="10000" min="100" step="100">
+                        </div>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date *</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+
+                    <!-- Trading Costs -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="commission" class="form-label">Commission (%)</label>
+                            <input type="number" class="form-control" id="commission" name="commission" 
+                                   value="0.1" min="0" max="5" step="0.01">
+                            <div class="form-text">Commission per trade (e.g., 0.1 for 0.1%)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="slippage" class="form-label">Slippage (%)</label>
+                            <input type="number" class="form-control" id="slippage" name="slippage" 
+                                   value="0.05" min="0" max="1" step="0.01">
+                            <div class="form-text">Expected slippage per trade</div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy Parameters (Dynamic) -->
+                    <div id="strategyParameters" class="mb-3" style="display: none;">
+                        <h6><i class="fas fa-sliders-h me-2"></i>Strategy Parameters</h6>
+                        <div id="parametersContainer">
+                            <!-- Parameters will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play me-1"></i>Start Backtest
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Strategy Information -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Strategy Information</h6>
+            </div>
+            <div class="card-body" id="strategyInfo">
+                <p class="text-muted">Select a strategy to see details</p>
+            </div>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Use realistic commission and slippage values
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Test on sufficient historical data (at least 3 months)
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Consider market conditions during the test period
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Compare results across different time periods
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const strategySelect = document.getElementById('strategy_id');
+    const strategyInfo = document.getElementById('strategyInfo');
+    const strategyParameters = document.getElementById('strategyParameters');
+    const parametersContainer = document.getElementById('parametersContainer');
+    
+    // Set default dates
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3); // 3 months ago
+    
+    document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    
+    // Handle strategy selection
+    strategySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            // Update strategy info
+            const description = selectedOption.getAttribute('data-description');
+            strategyInfo.innerHTML = `
+                <h6>${selectedOption.text}</h6>
+                <p class="mb-0">${description}</p>
+            `;
+            
+            // Load strategy parameters
+            loadStrategyParameters(this.value);
+        } else {
+            strategyInfo.innerHTML = '<p class="text-muted">Select a strategy to see details</p>';
+            strategyParameters.style.display = 'none';
+        }
+    });
+    
+    function loadStrategyParameters(strategyId) {
+        fetch(`/api/strategies/${strategyId}/parameters`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.parameters && Object.keys(data.parameters).length > 0) {
+                    renderParameters(data.parameters);
+                    strategyParameters.style.display = 'block';
+                } else {
+                    strategyParameters.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading strategy parameters:', error);
+                strategyParameters.style.display = 'none';
+            });
+    }
+    
+    function renderParameters(parameters) {
+        let html = '<div class="row">';
+        
+        Object.entries(parameters).forEach(([paramName, paramConfig]) => {
+            html += `<div class="col-md-6 mb-3">`;
+            html += `<label for="param_${paramName}" class="form-label">${paramName.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>`;
+            
+            if (paramConfig.type === 'select') {
+                html += `<select class="form-select" id="param_${paramName}" name="param_${paramName}">`;
+                paramConfig.options.forEach(option => {
+                    const selected = option === paramConfig.default ? 'selected' : '';
+                    html += `<option value="${option}" ${selected}>${option}</option>`;
+                });
+                html += `</select>`;
+            } else if (paramConfig.type === 'int') {
+                html += `<input type="number" class="form-control" id="param_${paramName}" name="param_${paramName}" 
+                         value="${paramConfig.default}" min="${paramConfig.min || 0}" max="${paramConfig.max || 1000}" step="1">`;
+            } else if (paramConfig.type === 'float') {
+                html += `<input type="number" class="form-control" id="param_${paramName}" name="param_${paramName}" 
+                         value="${paramConfig.default}" min="${paramConfig.min || 0}" max="${paramConfig.max || 100}" step="0.01">`;
+            } else {
+                html += `<input type="text" class="form-control" id="param_${paramName}" name="param_${paramName}" 
+                         value="${paramConfig.default || ''}">`;
+            }
+            
+            html += `</div>`;
+        });
+        
+        html += '</div>';
+        parametersContainer.innerHTML = html;
+    }
+});
+
+function resetForm() {
+    document.getElementById('backtestForm').reset();
+    document.getElementById('strategyInfo').innerHTML = '<p class="text-muted">Select a strategy to see details</p>';
+    document.getElementById('strategyParameters').style.display = 'none';
+    
+    // Reset dates
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3);
+    
+    document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+}
+
+// Form validation
+document.getElementById('backtestForm').addEventListener('submit', function(e) {
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(document.getElementById('end_date').value);
+    
+    if (startDate >= endDate) {
+        e.preventDefault();
+        alert('End date must be after start date');
+        return false;
+    }
+    
+    const daysDiff = (endDate - startDate) / (1000 * 60 * 60 * 24);
+    if (daysDiff < 7) {
+        if (!confirm('The selected period is less than a week. This may not provide reliable results. Continue anyway?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}

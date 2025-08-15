@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-list me-2"></i>Backtest History</h1>
+            <div>
+                <a href="{{ url_for('new_backtest') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-1"></i>New Backtest
+                </a>
+                <button class="btn btn-outline-secondary" onclick="toggleCompareMode()">
+                    <i class="fas fa-balance-scale me-1"></i>Compare Mode
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form class="row g-3" id="filterForm">
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="completed">Completed</option>
+                            <option value="running">Running</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="strategyFilter" class="form-label">Strategy</label>
+                        <select class="form-select" id="strategyFilter">
+                            <option value="">All Strategies</option>
+                            {% for backtest in backtests %}
+                                {% if backtest.strategy not in (backtests|map(attribute='strategy')|list)[:loop.index-1] %}
+                                    <option value="{{ backtest.strategy }}">{{ backtest.strategy }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pairFilter" class="form-label">Pair</label>
+                        <select class="form-select" id="pairFilter">
+                            <option value="">All Pairs</option>
+                            {% for backtest in backtests %}
+                                {% if backtest.pair not in (backtests|map(attribute='pair')|list)[:loop.index-1] %}
+                                    <option value="{{ backtest.pair }}">{{ backtest.pair }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compare Mode Banner -->
+<div id="compareModeBanner" class="alert alert-info d-none" role="alert">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-info-circle me-2"></i>
+            Compare mode enabled. Select backtests to compare by checking the boxes.
+            <span id="selectedCount">0</span> selected.
+        </div>
+        <div>
+            <button class="btn btn-sm btn-primary me-2" onclick="compareSelected()" disabled id="compareBtn">
+                <i class="fas fa-balance-scale me-1"></i>Compare Selected
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleCompareMode()">
+                <i class="fas fa-times me-1"></i>Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Backtests Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Backtests</h5>
+                <small class="text-muted">{{ backtests|length }} total</small>
+            </div>
+            <div class="card-body">
+                {% if backtests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="backtestsTable">
+                            <thead>
+                                <tr>
+                                    <th class="compare-column d-none">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th>Name</th>
+                                    <th>Strategy</th>
+                                    <th>Pair</th>
+                                    <th>Period</th>
+                                    <th>Status</th>
+                                    <th>Return</th>
+                                    <th>Max DD</th>
+                                    <th>Sharpe</th>
+                                    <th>Trades</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backtest in backtests %}
+                                <tr data-status="{{ backtest.status }}" data-strategy="{{ backtest.strategy }}" data-pair="{{ backtest.pair }}">
+                                    <td class="compare-column d-none">
+                                        <input type="checkbox" class="backtest-checkbox" value="{{ backtest.id }}" 
+                                               onchange="updateSelectedCount()">
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ backtest.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">ID: {{ backtest.id }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ backtest.strategy }}</span>
+                                    </td>
+                                    <td>{{ backtest.pair }}</td>
+                                    <td>
+                                        <small>
+                                            {{ backtest.start_date }}<br>
+                                            to {{ backtest.end_date }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if backtest.status == 'completed' else 'warning' if backtest.status == 'running' else 'danger' }}">
+                                            {{ backtest.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if backtest.total_return is not none %}
+                                            <span class="text-{{ 'success' if backtest.total_return > 0 else 'danger' }}">
+                                                <strong>{{ backtest.total_return|round(2) }}%</strong>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if backtest.max_drawdown is not none %}
+                                            <span class="text-danger">
+                                                {{ backtest.max_drawdown|round(2) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if backtest.sharpe_ratio is not none %}
+                                            <span class="text-{{ 'success' if backtest.sharpe_ratio > 1 else 'warning' if backtest.sharpe_ratio > 0 else 'danger' }}">
+                                                {{ backtest.sharpe_ratio|round(2) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if backtest.status == 'completed' %}
+                                            <small class="text-muted">
+                                                Total: {{ backtest.get('total_trades', 'N/A') }}<br>
+                                                Win Rate: {{ backtest.get('win_rate', 'N/A') }}%
+                                            </small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ backtest.created_at.strftime('%Y-%m-%d %H:%M') if backtest.created_at else 'Unknown' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if backtest.status == 'completed' %}
+                                                <a href="{{ url_for('backtest_results', backtest_id=backtest.id) }}" 
+                                                   class="btn btn-outline-primary" title="View Results">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('backtest_performance', backtest_id=backtest.id) }}" 
+                                                   class="btn btn-outline-info" title="Performance Analysis">
+                                                    <i class="fas fa-chart-area"></i>
+                                                </a>
+                                                <a href="{{ url_for('backtest_trades', backtest_id=backtest.id) }}" 
+                                                   class="btn btn-outline-success" title="View Trades">
+                                                    <i class="fas fa-list"></i>
+                                                </a>
+                                            {% elif backtest.status == 'running' %}
+                                                <button class="btn btn-outline-warning" 
+                                                        onclick="cancelBacktest('{{ backtest.id }}')" title="Cancel">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" 
+                                                        onclick="checkStatus('{{ backtest.id }}')" title="Check Status">
+                                                    <i class="fas fa-sync"></i>
+                                                </button>
+                                            {% elif backtest.status == 'failed' %}
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="showError('{{ backtest.id }}')" title="View Error">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No backtests found</h4>
+                        <p class="text-muted">Create your first backtest to get started</p>
+                        <a href="{{ url_for('new_backtest') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Create Backtest
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let compareMode = false;
+
+function toggleCompareMode() {
+    compareMode = !compareMode;
+    const compareColumns = document.querySelectorAll('.compare-column');
+    const banner = document.getElementById('compareModeBanner');
+    
+    if (compareMode) {
+        compareColumns.forEach(col => col.classList.remove('d-none'));
+        banner.classList.remove('d-none');
+    } else {
+        compareColumns.forEach(col => col.classList.add('d-none'));
+        banner.classList.add('d-none');
+        // Clear all selections
+        document.querySelectorAll('.backtest-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('selectAll').checked = false;
+        updateSelectedCount();
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.backtest-checkbox');
+    
+    checkboxes.forEach(cb => {
+        if (!cb.closest('tr').style.display || cb.closest('tr').style.display !== 'none') {
+            cb.checked = selectAll.checked;
+        }
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.backtest-checkbox:checked');
+    const count = selected.length;
+    
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('compareBtn').disabled = count < 2;
+    
+    // Update select all checkbox
+    const visibleCheckboxes = Array.from(document.querySelectorAll('.backtest-checkbox'))
+        .filter(cb => !cb.closest('tr').style.display || cb.closest('tr').style.display !== 'none');
+    const checkedVisible = visibleCheckboxes.filter(cb => cb.checked);
+    
+    const selectAll = document.getElementById('selectAll');
+    selectAll.checked = visibleCheckboxes.length > 0 && checkedVisible.length === visibleCheckboxes.length;
+    selectAll.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleCheckboxes.length;
+}
+
+function compareSelected() {
+    const selected = Array.from(document.querySelectorAll('.backtest-checkbox:checked'))
+        .map(cb => cb.value);
+    
+    if (selected.length < 2) {
+        alert('Please select at least 2 backtests to compare');
+        return;
+    }
+    
+    const params = selected.map(id => `ids=${id}`).join('&');
+    window.location.href = `{{ url_for('compare_backtests') }}?${params}`;
+}
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const strategyFilter = document.getElementById('strategyFilter').value;
+    const pairFilter = document.getElementById('pairFilter').value;
+    
+    const rows = document.querySelectorAll('#backtestsTable tbody tr');
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        const strategy = row.getAttribute('data-strategy');
+        const pair = row.getAttribute('data-pair');
+        
+        const statusMatch = !statusFilter || status === statusFilter;
+        const strategyMatch = !strategyFilter || strategy === strategyFilter;
+        const pairMatch = !pairFilter || pair === pairFilter;
+        
+        if (statusMatch && strategyMatch && pairMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    updateSelectedCount();
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('strategyFilter').value = '';
+    document.getElementById('pairFilter').value = '';
+    
+    const rows = document.querySelectorAll('#backtestsTable tbody tr');
+    rows.forEach(row => row.style.display = '');
+    
+    updateSelectedCount();
+}
+
+function cancelBacktest(backtestId) {
+    if (confirm('Are you sure you want to cancel this backtest?')) {
+        fetch(`/api/backtest/${backtestId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'cancelled') {
+                location.reload();
+            } else {
+                alert('Error cancelling backtest: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error cancelling backtest');
+        });
+    }
+}
+
+function checkStatus(backtestId) {
+    fetch(`/api/backtest/${backtestId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            alert(`Status: ${data.status}\nProgress: ${data.progress}%\nMessage: ${data.message}`);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error checking status');
+        });
+}
+
+function showError(backtestId) {
+    alert('Error details for backtest ' + backtestId + ' would be shown here');
+}
+
+// Auto-refresh for running backtests
+document.addEventListener('DOMContentLoaded', function() {
+    const runningBacktests = document.querySelectorAll('[data-status="running"]');
+    if (runningBacktests.length > 0) {
+        // Refresh page every 30 seconds if there are running backtests
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
+    }
+});
+</script>
+{% endblock %}

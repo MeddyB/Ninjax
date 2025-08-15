@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-briefcase me-2"></i>AI Portfolio Analysis</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Analysis
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshAnalysis()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if analysis %}
+<!-- Portfolio Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-star fa-2x text-primary mb-2"></i>
+                <h3 class="text-primary">{{ analysis.overall_score }}/10</h3>
+                <p class="text-muted">Overall Score</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-shield-alt fa-2x text-{{ 'success' if analysis.risk_level == 'Low' else 'danger' if analysis.risk_level == 'High' else 'warning' }} mb-2"></i>
+                <h4 class="text-{{ 'success' if analysis.risk_level == 'Low' else 'danger' if analysis.risk_level == 'High' else 'warning' }}">
+                    {{ analysis.risk_level }}
+                </h4>
+                <p class="text-muted">Risk Level</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-pie fa-2x text-info mb-2"></i>
+                <h3 class="text-info">{{ analysis.diversification_score }}/10</h3>
+                <p class="text-muted">Diversification</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
+                <h4 class="text-secondary">{{ moment(analysis.generated_at).fromNow() if moment else 'Recently' }}</h4>
+                <p class="text-muted">Last Updated</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Recommendations -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>AI Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analysis.recommendations %}
+                    {% for recommendation in analysis.recommendations %}
+                        <div class="alert alert-{{ 'danger' if recommendation.priority == 'high' else 'warning' if recommendation.priority == 'medium' else 'info' }} border-start border-4">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="alert-heading mb-1">
+                                        <i class="fas fa-{{ 'exclamation-triangle' if recommendation.priority == 'high' else 'info-circle' if recommendation.priority == 'medium' else 'lightbulb' }} me-2"></i>
+                                        {{ recommendation.type.replace('_', ' ').title() }} - {{ recommendation.priority.title() }} Priority
+                                    </h6>
+                                    <p class="mb-1">{{ recommendation.description }}</p>
+                                    <small class="text-muted">
+                                        <strong>Expected Impact:</strong> {{ recommendation.impact }}
+                                    </small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="implementRecommendation('{{ recommendation.type }}')">
+                                    <i class="fas fa-check me-1"></i>Implement
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No specific recommendations available at this time.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Forecast -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Performance Forecast
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analysis.performance_forecast %}
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="text-muted">Next Month</h6>
+                            <p class="mb-1">
+                                <strong>Expected Return:</strong> 
+                                <span class="text-{{ 'success' if analysis.performance_forecast.next_month.expected_return > 0 else 'danger' }}">
+                                    {{ "%.1f"|format(analysis.performance_forecast.next_month.expected_return * 100) }}%
+                                </span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Volatility:</strong> 
+                                <span class="text-warning">{{ "%.1f"|format(analysis.performance_forecast.next_month.volatility * 100) }}%</span>
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted">Next Quarter</h6>
+                            <p class="mb-1">
+                                <strong>Expected Return:</strong> 
+                                <span class="text-{{ 'success' if analysis.performance_forecast.next_quarter.expected_return > 0 else 'danger' }}">
+                                    {{ "%.1f"|format(analysis.performance_forecast.next_quarter.expected_return * 100) }}%
+                                </span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Volatility:</strong> 
+                                <span class="text-warning">{{ "%.1f"|format(analysis.performance_forecast.next_quarter.volatility * 100) }}%</span>
+                            </p>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Performance forecast not available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Risk-Return Profile
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riskReturnChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Composition -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins me-2"></i>Portfolio Composition Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="compositionChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="rebalancePortfolio()">
+                        <i class="fas fa-balance-scale me-2"></i>Rebalance Portfolio
+                    </button>
+                    <button class="btn btn-outline-success" onclick="optimizeRisk()">
+                        <i class="fas fa-shield-alt me-2"></i>Optimize Risk
+                    </button>
+                    <button class="btn btn-outline-info" onclick="generateReport()">
+                        <i class="fas fa-file-alt me-2"></i>Generate Report
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="setAlerts()">
+                        <i class="fas fa-bell me-2"></i>Set Alerts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No portfolio analysis data available. Please ensure your portfolio data is properly configured.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+{% if analysis %}
+// Risk-Return Chart
+const riskReturnCtx = document.getElementById('riskReturnChart').getContext('2d');
+const riskReturnChart = new Chart(riskReturnCtx, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Current Portfolio',
+            data: [{
+                x: {{ analysis.performance_forecast.next_month.volatility * 100 if analysis.performance_forecast else 25 }},
+                y: {{ analysis.performance_forecast.next_month.expected_return * 100 if analysis.performance_forecast else 8 }}
+            }],
+            backgroundColor: '#007bff',
+            borderColor: '#007bff',
+            pointRadius: 8
+        }, {
+            label: 'Optimal Range',
+            data: [
+                {x: 15, y: 6}, {x: 20, y: 8}, {x: 25, y: 10}, {x: 30, y: 12}
+            ],
+            backgroundColor: '#28a74550',
+            borderColor: '#28a745',
+            pointRadius: 4,
+            showLine: true,
+            fill: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Risk (Volatility %)'
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Expected Return %'
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': Risk ' + context.parsed.x + '%, Return ' + context.parsed.y + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Portfolio Composition Chart
+const compositionCtx = document.getElementById('compositionChart').getContext('2d');
+const compositionChart = new Chart(compositionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'Others'],
+        datasets: [{
+            data: [45, 25, 10, 8, 7, 5],
+            backgroundColor: [
+                '#f7931a', '#627eea', '#f3ba2f', '#0033ad', '#9945ff', '#6c757d'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function refreshAnalysis() {
+    location.reload();
+}
+
+function implementRecommendation(type) {
+    // TODO: Implement recommendation action
+    AIInsightsApp.showNotification(`Implementing ${type.replace('_', ' ')} recommendation...`, 'info');
+}
+
+function rebalancePortfolio() {
+    if (confirm('Are you sure you want to rebalance your portfolio based on AI recommendations?')) {
+        AIInsightsApp.showNotification('Portfolio rebalancing initiated', 'success');
+    }
+}
+
+function optimizeRisk() {
+    AIInsightsApp.showNotification('Risk optimization analysis started', 'info');
+}
+
+function generateReport() {
+    AIInsightsApp.showNotification('Generating detailed portfolio report...', 'info');
+}
+
+function setAlerts() {
+    AIInsightsApp.showNotification('Portfolio alert configuration opened', 'info');
+}
+</script>
+{% endblock %}

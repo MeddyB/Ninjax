@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Accès interdit - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-warning">
+                    <i class="fas fa-lock"></i>
+                </h1>
+                <h2 class="display-4">403</h2>
+                <h3>Accès interdit</h3>
+                <div class="error-details mb-4">
+                    <p class="lead">
+                        Vous n'avez pas les permissions nécessaires pour accéder à cette ressource.
+                    </p>
+                </div>
+                <div class="error-actions">
+                    <a href="/" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-home me-2"></i>
+                        Retour à l'accueil
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Page précédente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-8">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informations sur l'accès
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Cette restriction peut être due à :</p>
+                <ul>
+                    <li>Permissions insuffisantes pour votre compte</li>
+                    <li>Accès restreint à certaines fonctionnalités</li>
+                    <li>Configuration de sécurité de l'application</li>
+                </ul>
+                
+                <p class="mb-0">
+                    <strong>Contactez l'administrateur</strong> si vous pensez que vous devriez avoir accès à cette ressource.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

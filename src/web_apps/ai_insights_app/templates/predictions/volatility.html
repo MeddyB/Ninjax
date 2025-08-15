@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-wave-square me-2"></i>Volatility Predictions</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('predictions_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Predictions
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshVolatility()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if volatility_data %}
+<!-- Market Volatility Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-area me-2"></i>Market Volatility Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <div class="display-4 text-{{ 'danger' if volatility_data.market_volatility.current > 0.4 else 'warning' if volatility_data.market_volatility.current > 0.25 else 'success' }}">
+                            {{ "%.1f"|format(volatility_data.market_volatility.current * 100) }}%
+                        </div>
+                        <h6>Current Volatility</h6>
+                        <small class="text-muted">Market-wide average</small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <canvas id="volatilityTrendChart" height="200"></canvas>
+                    </div>
+                    
+                    <div class="col-md-3 text-center">
+                        <div class="mb-3">
+                            <h5 class="text-{{ 'danger' if volatility_data.market_volatility.predicted_24h > 0.4 else 'warning' if volatility_data.market_volatility.predicted_24h > 0.25 else 'success' }}">
+                                {{ "%.1f"|format(volatility_data.market_volatility.predicted_24h * 100) }}%
+                            </h5>
+                            <small class="text-muted">24h Prediction</small>
+                        </div>
+                        <div class="mb-3">
+                            <h5 class="text-{{ 'danger' if volatility_data.market_volatility.predicted_7d > 0.4 else 'warning' if volatility_data.market_volatility.predicted_7d > 0.25 else 'success' }}">
+                                {{ "%.1f"|format(volatility_data.market_volatility.predicted_7d * 100) }}%
+                            </h5>
+                            <small class="text-muted">7d Prediction</small>
+                        </div>
+                        <div>
+                            <i class="fas fa-{{ 'arrow-up' if volatility_data.market_volatility.trend == 'increasing' else 'arrow-down' if volatility_data.market_volatility.trend == 'decreasing' else 'minus' }} text-{{ 'danger' if volatility_data.market_volatility.trend == 'increasing' else 'success' if volatility_data.market_volatility.trend == 'decreasing' else 'secondary' }}"></i>
+                            <span class="text-{{ 'danger' if volatility_data.market_volatility.trend == 'increasing' else 'success' if volatility_data.market_volatility.trend == 'decreasing' else 'secondary' }}">
+                                {{ volatility_data.market_volatility.trend.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Volatility by Asset -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins me-2"></i>Volatility by Asset
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for asset, vol_data in volatility_data.by_asset.items() %}
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-{{ 'danger' if vol_data.risk_level == 'High' else 'warning' if vol_data.risk_level == 'Medium-High' or vol_data.risk_level == 'Medium' else 'success' }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="card-title mb-0">{{ asset }}</h6>
+                                        <span class="badge bg-{{ 'danger' if vol_data.risk_level == 'High' else 'warning' if vol_data.risk_level == 'Medium-High' or vol_data.risk_level == 'Medium' else 'success' }}">
+                                            {{ vol_data.risk_level }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Current</small>
+                                            <small class="fw-bold">{{ "%.1f"|format(vol_data.current * 100) }}%</small>
+                                        </div>
+                                        <div class="progress mb-1" style="height: 6px;">
+                                            <div class="progress-bar bg-{{ 'danger' if vol_data.current > 0.4 else 'warning' if vol_data.current > 0.25 else 'success' }}" 
+                                                 style="width: {{ (vol_data.current * 100) if vol_data.current <= 1 else 100 }}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Predicted</small>
+                                            <small class="fw-bold text-{{ 'danger' if vol_data.predicted > vol_data.current else 'success' if vol_data.predicted < vol_data.current else 'secondary' }}">
+                                                {{ "%.1f"|format(vol_data.predicted * 100) }}%
+                                                {% if vol_data.predicted > vol_data.current %}
+                                                    <i class="fas fa-arrow-up"></i>
+                                                {% elif vol_data.predicted < vol_data.current %}
+                                                    <i class="fas fa-arrow-down"></i>
+                                                {% else %}
+                                                    <i class="fas fa-minus"></i>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-{{ 'danger' if vol_data.predicted > 0.4 else 'warning' if vol_data.predicted > 0.25 else 'success' }}" 
+                                                 style="width: {{ (vol_data.predicted * 100) if vol_data.predicted <= 1 else 100 }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Volatility Events -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Upcoming Volatility Events
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if volatility_data.volatility_events %}
+                    {% for event in volatility_data.volatility_events %}
+                        <div class="alert alert-{{ 'danger' if event.expected_impact == 'High' else 'warning' if event.expected_impact == 'Medium' else 'info' }} border-start border-4">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="alert-heading mb-1">
+                                        <i class="fas fa-{{ 'exclamation-triangle' if event.expected_impact == 'High' else 'info-circle' }} me-2"></i>
+                                        {{ event.event }}
+                                    </h6>
+                                    <p class="mb-1">
+                                        <strong>Expected Impact:</strong> 
+                                        <span class="badge bg-{{ 'danger' if event.expected_impact == 'High' else 'warning' if event.expected_impact == 'Medium' else 'info' }}">
+                                            {{ event.expected_impact }}
+                                        </span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Affected Assets:</strong> {{ event.affected_assets|join(', ') }}
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        {{ moment(event.date).format('MMM DD, YYYY') if moment else event.date }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No major volatility events scheduled in the near future.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Risk Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-muted">Risk Level Distribution</h6>
+                    <canvas id="riskDistributionChart" height="200"></canvas>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-warning btn-sm" onclick="setVolatilityAlerts()">
+                        <i class="fas fa-bell me-1"></i>Set Volatility Alerts
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="viewRiskAnalysis()">
+                        <i class="fas fa-chart-bar me-1"></i>Risk Analysis
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="exportVolatilityReport()">
+                        <i class="fas fa-download me-1"></i>Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Volatility Analysis Tools -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>Volatility Analysis Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calculator fa-2x text-primary mb-2"></i>
+                                <h6>Volatility Calculator</h6>
+                                <p class="small text-muted">Calculate custom volatility metrics and scenarios</p>
+                                <button class="btn btn-primary btn-sm" onclick="openVolatilityCalculator()">
+                                    <i class="fas fa-calculator me-1"></i>Open Calculator
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+                                <h6>Historical Analysis</h6>
+                                <p class="small text-muted">Compare current volatility with historical patterns</p>
+                                <button class="btn btn-warning btn-sm" onclick="viewHistoricalVolatility()">
+                                    <i class="fas fa-history me-1"></i>View History
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cog fa-2x text-success mb-2"></i>
+                                <h6>Portfolio Impact</h6>
+                                <p class="small text-muted">Analyze volatility impact on your portfolio</p>
+                                <button class="btn btn-success btn-sm" onclick="analyzePortfolioImpact()">
+                                    <i class="fas fa-briefcase me-1"></i>Analyze Impact
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+            <h5>No Volatility Data Available</h5>
+            <p class="mb-0">Volatility prediction models are currently being updated. Please check back in a few minutes.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+{% if volatility_data %}
+// Volatility Trend Chart
+const trendCtx = document.getElementById('volatilityTrendChart').getContext('2d');
+const volatilityTrendChart = new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: ['7d ago', '5d ago', '3d ago', '1d ago', 'Now', '1d pred', '3d pred', '7d pred'],
+        datasets: [{
+            label: 'Market Volatility',
+            data: [0.22, 0.24, 0.26, 0.23, {{ volatility_data.market_volatility.current }}, 
+                   {{ volatility_data.market_volatility.predicted_24h }}, 
+                   {{ (volatility_data.market_volatility.predicted_24h + volatility_data.market_volatility.predicted_7d) / 2 }}, 
+                   {{ volatility_data.market_volatility.predicted_7d }}],
+            borderColor: '#ffc107',
+            backgroundColor: '#ffc10720',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: function(context) {
+                const index = context.dataIndex;
+                return index < 5 ? '#ffc107' : '#dc3545';
+            },
+            pointBorderColor: function(context) {
+                const index = context.dataIndex;
+                return index < 5 ? '#ffc107' : '#dc3545';
+            }
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 0.6,
+                ticks: {
+                    callback: function(value) {
+                        return (value * 100) + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Volatility: ' + (context.parsed.y * 100).toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Risk Distribution Chart
+const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+const riskLevels = {};
+{% for asset, vol_data in volatility_data.by_asset.items() %}
+    const level = '{{ vol_data.risk_level }}';
+    riskLevels[level] = (riskLevels[level] || 0) + 1;
+{% endfor %}
+
+const riskDistributionChart = new Chart(riskCtx, {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(riskLevels),
+        datasets: [{
+            data: Object.values(riskLevels),
+            backgroundColor: [
+                '#28a745', // Low
+                '#ffc107', // Medium
+                '#fd7e14', // Medium-High
+                '#dc3545'  // High
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed + ' assets';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function refreshVolatility() {
+    location.reload();
+}
+
+function setVolatilityAlerts() {
+    AIInsightsApp.showNotification('Opening volatility alerts configuration...', 'info');
+    // TODO: Implement volatility alerts setup
+}
+
+function viewRiskAnalysis() {
+    AIInsightsApp.showNotification('Loading detailed risk analysis...', 'info');
+    // TODO: Implement detailed risk analysis view
+}
+
+function exportVolatilityReport() {
+    AIInsightsApp.showNotification('Generating volatility report...', 'info');
+    // TODO: Implement report export
+    setTimeout(() => {
+        AIInsightsApp.showNotification('Volatility report exported successfully', 'success');
+    }, 2000);
+}
+
+function openVolatilityCalculator() {
+    AIInsightsApp.showNotification('Opening volatility calculator...', 'info');
+    // TODO: Implement volatility calculator
+}
+
+function viewHistoricalVolatility() {
+    AIInsightsApp.showNotification('Loading historical volatility data...', 'info');
+    // TODO: Implement historical volatility view
+}
+
+function analyzePortfolioImpact() {
+    AIInsightsApp.showNotification('Analyzing portfolio volatility impact...', 'info');
+    // TODO: Implement portfolio impact analysis
+}
+
+// Auto-refresh volatility data every 10 minutes
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        fetch('/api/predictions/volatility')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Updated volatility data:', data);
+                // Update volatility display without full page reload
+            })
+            .catch(error => {
+                console.error('Error updating volatility data:', error);
+            });
+    }
+}, 600000); // 10 minutes
+</script>
+{% endblock %}

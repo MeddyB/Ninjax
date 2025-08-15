@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Page non trouvée - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-muted">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </h1>
+                <h2 class="display-4">404</h2>
+                <h3>Page non trouvée</h3>
+                <div class="error-details mb-4">
+                    <p class="lead">
+                        Désolé, la page que vous recherchez n'existe pas ou a été déplacée.
+                    </p>
+                </div>
+                <div class="error-actions">
+                    <a href="/" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-home me-2"></i>
+                        Retour à l'accueil
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Page précédente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Besoin d'aide ?
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Si vous pensez qu'il s'agit d'une erreur, voici quelques suggestions :</p>
+                <ul>
+                    <li>Vérifiez l'URL dans la barre d'adresse</li>
+                    <li>Utilisez le menu de navigation pour accéder à la page souhaitée</li>
+                    <li>Contactez l'administrateur si le problème persiste</li>
+                </ul>
+                
+                <h6>Pages disponibles :</h6>
+                <div class="row">
+                    {% for app_name, app_url in nav_links.items() %}
+                    <div class="col-md-6 mb-2">
+                        <a href="{{ app_url }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            {{ app_name }}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

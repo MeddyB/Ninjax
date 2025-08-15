@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-brain me-2"></i>AI Insights Dashboard</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line me-1"></i>View Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-server me-2"></i>System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if system_status %}
+                    {% if system_status.status == 'healthy' %}
+                        <div class="alert alert-success mb-2">
+                            <i class="fas fa-check-circle me-2"></i>Backend API is healthy
+                        </div>
+                    {% elif system_status.status == 'offline' %}
+                        <div class="alert alert-warning mb-2">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Backend API is offline
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger mb-2">
+                            <i class="fas fa-times-circle me-2"></i>Backend API error: {{ system_status.message }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if system_status.uptime %}
+                        <p class="mb-1"><strong>Uptime:</strong> {{ system_status.uptime }}</p>
+                    {% endif %}
+                    {% if system_status.version %}
+                        <p class="mb-0"><strong>Version:</strong> {{ system_status.version }}</p>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        <i class="fas fa-question-circle me-2"></i>System status unknown
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-robot me-2"></i>AI Models Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if ai_models_status and ai_models_status.models %}
+                    {% for model in ai_models_status.models %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ model.name }}</strong>
+                                <small class="text-muted d-block">{{ model.type }}</small>
+                            </div>
+                            <div class="text-end">
+                                {% if model.status == 'ready' %}
+                                    <span class="badge bg-success">Ready</span>
+                                {% elif model.status == 'training' %}
+                                    <span class="badge bg-warning">Training</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ model.status|title }}</span>
+                                {% endif %}
+                                {% if model.accuracy %}
+                                    <small class="text-muted d-block">{{ model.accuracy }}% accuracy</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not loop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>No AI models available
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <span>Market Analysis</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('predictions_dashboard') }}" class="btn btn-outline-success w-100 h-100 d-flex flex-column justify-content-center">
+                            <i class="fas fa-crystal-ball fa-2x mb-2"></i>
+                            <span>Predictions</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('trading_signals') }}" class="btn btn-outline-warning w-100 h-100 d-flex flex-column justify-content-center">
+                            <i class="fas fa-signal fa-2x mb-2"></i>
+                            <span>Trading Signals</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('models_management') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center">
+                            <i class="fas fa-cogs fa-2x mb-2"></i>
+                            <span>Manage Models</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Row -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Recent AI Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Market Sentiment Analysis Completed</h6>
+                            <p class="mb-1 text-muted">Overall market sentiment: Bullish (85% confidence)</p>
+                            <small class="text-muted">2 minutes ago</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Price Prediction Updated</h6>
+                            <p class="mb-1 text-muted">BTC/USDT 24h prediction: $46,200 (72% confidence)</p>
+                            <small class="text-muted">15 minutes ago</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">New Trading Signal Generated</h6>
+                            <p class="mb-1 text-muted">BUY signal for BTC/USDT (87% confidence)</p>
+                            <small class="text-muted">1 hour ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>AI Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Performance Chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+const performanceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Accurate Predictions', 'Inaccurate Predictions'],
+        datasets: [{
+            data: [78, 22],
+            backgroundColor: ['#28a745', '#dc3545'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function refreshDashboard() {
+    location.reload();
+}
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 0;
+    bottom: -20px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child:before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -26px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+</style>
+{% endblock %}

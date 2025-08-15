@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-newspaper me-2"></i>Market News Analysis</h1>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Analysis
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshNews()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- News Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <label for="sentimentFilter" class="form-label">Sentiment</label>
+                        <select class="form-select" id="sentimentFilter" onchange="filterNews()">
+                            <option value="">All Sentiments</option>
+                            <option value="Positive" {{ 'selected' if sentiment_filter == 'Positive' }}>Positive</option>
+                            <option value="Negative" {{ 'selected' if sentiment_filter == 'Negative' }}>Negative</option>
+                            <option value="Neutral" {{ 'selected' if sentiment_filter == 'Neutral' }}>Neutral</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="impactFilter" class="form-label">Min Impact Score</label>
+                        <select class="form-select" id="impactFilter" onchange="filterNews()">
+                            <option value="0">All Impact Levels</option>
+                            <option value="0.3">Low Impact (3+)</option>
+                            <option value="0.5">Medium Impact (5+)</option>
+                            <option value="0.7">High Impact (7+)</option>
+                            <option value="0.9">Critical Impact (9+)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="assetFilter" class="form-label">Affected Asset</label>
+                        <input type="text" class="form-control" id="assetFilter" placeholder="e.g., BTC, ETH" onchange="filterNews()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="clearNewsFilters()">
+                                <i class="fas fa-times me-1"></i>Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Market News Analysis -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>AI News Analysis
+                </h5>
+                <span class="badge bg-primary">{{ news_analysis|length if news_analysis else 0 }} articles</span>
+            </div>
+            <div class="card-body">
+                {% if news_analysis %}
+                    <div id="newsContainer">
+                        {% for news in news_analysis %}
+                            <div class="news-item border-bottom pb-4 mb-4" 
+                                 data-sentiment="{{ news.sentiment }}" 
+                                 data-impact="{{ news.impact_score }}" 
+                                 data-assets="{{ news.affected_assets|join(',') }}">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5 class="mb-2">{{ news.title }}</h5>
+                                        <p class="text-muted mb-2">{{ news.summary }}</p>
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-1">
+                                                <i class="fas fa-robot me-1"></i>AI Analysis
+                                            </h6>
+                                            <p class="mb-0 bg-light p-2 rounded">{{ news.ai_analysis }}</p>
+                                        </div>
+                                        
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <span class="badge bg-{{ 'success' if news.sentiment == 'Positive' else 'danger' if news.sentiment == 'Negative' else 'secondary' }}">
+                                                <i class="fas fa-{{ 'smile' if news.sentiment == 'Positive' else 'frown' if news.sentiment == 'Negative' else 'meh' }} me-1"></i>
+                                                {{ news.sentiment }}
+                                            </span>
+                                            
+                                            {% for asset in news.affected_assets %}
+                                                <span class="badge bg-info">{{ asset }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="text-center mb-3">
+                                            <div class="display-6 text-{{ 'danger' if news.impact_score > 0.7 else 'warning' if news.impact_score > 0.4 else 'success' }}">
+                                                {{ "%.1f"|format(news.impact_score * 10) }}
+                                            </div>
+                                            <small class="text-muted">Impact Score</small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="progress mb-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ 'danger' if news.impact_score > 0.7 else 'warning' if news.impact_score > 0.4 else 'success' }}" 
+                                                     style="width: {{ news.impact_score * 100 }}%"></div>
+                                            </div>
+                                            <small class="text-muted">Market Impact</small>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <small class="text-muted d-block">Published</small>
+                                            <small class="fw-bold">{{ moment(news.published_at).fromNow() if moment else news.published_at }}</small>
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2 mt-3">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="analyzeNewsImpact('{{ loop.index0 }}')">
+                                                <i class="fas fa-chart-line me-1"></i>Analyze Impact
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-info" onclick="viewFullArticle('{{ loop.index0 }}')">
+                                                <i class="fas fa-external-link-alt me-1"></i>Full Article
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <h5>No News Analysis Available</h5>
+                        <p class="mb-0">No market news analysis matches your current filters. Try adjusting the filters or check back later.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- News Impact Analysis Modal -->
+<div class="modal fade" id="newsImpactModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">News Impact Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="newsImpactContent">
+                <!-- News impact analysis will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="createAlert()">Create Alert</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function refreshNews() {
+    location.reload();
+}
+
+function filterNews() {
+    const sentimentFilter = document.getElementById('sentimentFilter').value;
+    const impactFilter = parseFloat(document.getElementById('impactFilter').value) || 0;
+    const assetFilter = document.getElementById('assetFilter').value.toUpperCase();
+    
+    const newsItems = document.querySelectorAll('.news-item');
+    let visibleCount = 0;
+    
+    newsItems.forEach(item => {
+        const sentiment = item.dataset.sentiment;
+        const impact = parseFloat(item.dataset.impact);
+        const assets = item.dataset.assets.toUpperCase();
+        
+        let show = true;
+        
+        if (sentimentFilter && sentiment !== sentimentFilter) show = false;
+        if (impact < impactFilter) show = false;
+        if (assetFilter && !assets.includes(assetFilter)) show = false;
+        
+        item.style.display = show ? 'block' : 'none';
+        if (show) visibleCount++;
+    });
+    
+    // Update news count
+    const badge = document.querySelector('.card-header .badge');
+    badge.textContent = `${visibleCount} articles`;
+}
+
+function clearNewsFilters() {
+    document.getElementById('sentimentFilter').value = '';
+    document.getElementById('impactFilter').value = '0';
+    document.getElementById('assetFilter').value = '';
+    filterNews();
+}
+
+function analyzeNewsImpact(newsIndex) {
+    // Show loading state
+    const modalContent = document.getElementById('newsImpactContent');
+    modalContent.innerHTML = AIInsightsApp.createLoadingHTML('Analyzing news impact...');
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('newsImpactModal'));
+    modal.show();
+    
+    // Simulate API call to analyze news impact
+    setTimeout(() => {
+        modalContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Price Impact Prediction</h6>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>BTC/USDT</span>
+                            <span class="text-success">+2.3%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: 75%"></div>
+                        </div>
+                        <small class="text-muted">75% confidence</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>ETH/USDT</span>
+                            <span class="text-success">+1.8%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: 68%"></div>
+                        </div>
+                        <small class="text-muted">68% confidence</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Market Overall</span>
+                            <span class="text-success">+1.5%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: 72%"></div>
+                        </div>
+                        <small class="text-muted">72% confidence</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6>Timeline Impact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Immediate (0-1h):</strong>
+                            <span class="text-success">Positive reaction expected</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Short-term (1-24h):</strong>
+                            <span class="text-success">Sustained positive momentum</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Medium-term (1-7d):</strong>
+                            <span class="text-warning">Impact may diminish</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Long-term (7d+):</strong>
+                            <span class="text-secondary">Minimal lasting effect</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>AI Reasoning</h6>
+                    <p class="text-muted">
+                        This news event is likely to have a positive short-term impact on cryptocurrency markets. 
+                        The announcement addresses key regulatory concerns and provides clarity for institutional investors. 
+                        Historical analysis of similar events shows an average 2-3% price increase within 24 hours, 
+                        with Bitcoin and Ethereum typically leading the rally.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Trading Recommendation:</strong> Consider taking long positions in major cryptocurrencies 
+                        with tight stop-losses. Monitor volume for confirmation of the predicted price movement.
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 1500);
+}
+
+function viewFullArticle(newsIndex) {
+    // Simulate opening full article in new tab
+    AIInsightsApp.showNotification('Opening full article in new tab...', 'info');
+    // In real implementation, this would open the actual article URL
+}
+
+function createAlert() {
+    AIInsightsApp.showNotification('News impact alert created successfully', 'success');
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('newsImpactModal'));
+    modal.hide();
+}
+
+// Auto-refresh news every 10 minutes
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        fetch('/api/news/analysis')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Updated news analysis:', data);
+                // Update news display without full page reload
+            })
+            .catch(error => {
+                console.error('Error updating news analysis:', error);
+            });
+    }
+}, 600000); // 10 minutes
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-lightbulb me-2"></i>AI Market Insights</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshInsights()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#configModal">
+                    <i class="fas fa-cog me-1"></i>Configure
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Market Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-globe me-2"></i>Market Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                        <h4 class="text-success">Bullish</h4>
+                        <p class="text-muted">Overall Sentiment</p>
+                        <small>85% confidence</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-thermometer-half fa-2x text-warning mb-2"></i>
+                        <h4 class="text-warning">Medium</h4>
+                        <p class="text-muted">Volatility Level</p>
+                        <small>25% current</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-volume-up fa-2x text-info mb-2"></i>
+                        <h4 class="text-info">High</h4>
+                        <p class="text-muted">Trading Volume</p>
+                        <small>+15% vs avg</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                        <h4 class="text-primary">Stable</h4>
+                        <p class="text-muted">Market Health</p>
+                        <small>No major risks</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Grid -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-brain me-2"></i>AI Market Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="insight-item mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Strong Bullish Pattern Detected</h6>
+                            <p class="text-muted small mb-1">BTC/USDT showing ascending triangle formation</p>
+                            <span class="badge bg-success">High Confidence</span>
+                        </div>
+                        <small class="text-muted">2m ago</small>
+                    </div>
+                </div>
+                
+                <div class="insight-item mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Volume Surge Alert</h6>
+                            <p class="text-muted small mb-1">ETH trading volume increased 45% in last hour</p>
+                            <span class="badge bg-warning">Medium Confidence</span>
+                        </div>
+                        <small class="text-muted">15m ago</small>
+                    </div>
+                </div>
+                
+                <div class="insight-item mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Sentiment Shift Detected</h6>
+                            <p class="text-muted small mb-1">Social media sentiment turning positive for altcoins</p>
+                            <span class="badge bg-info">Medium Confidence</span>
+                        </div>
+                        <small class="text-muted">1h ago</small>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('analysis_dashboard') }}" class="btn btn-outline-primary w-100">
+                    View All Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-crystal-ball me-2"></i>Price Predictions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="prediction-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">BTC/USDT</h6>
+                            <p class="text-muted small mb-0">24h prediction: $46,200</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-success">+2.1%</span>
+                            <div class="progress mt-1" style="width: 80px; height: 6px;">
+                                <div class="progress-bar bg-success" style="width: 72%"></div>
+                            </div>
+                            <small class="text-muted">72% conf.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="prediction-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">ETH/USDT</h6>
+                            <p class="text-muted small mb-0">24h prediction: $3,280</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-success">+4.1%</span>
+                            <div class="progress mt-1" style="width: 80px; height: 6px;">
+                                <div class="progress-bar bg-success" style="width: 68%"></div>
+                            </div>
+                            <small class="text-muted">68% conf.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="prediction-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">BNB/USDT</h6>
+                            <p class="text-muted small mb-0">24h prediction: $315</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-danger">-1.2%</span>
+                            <div class="progress mt-1" style="width: 80px; height: 6px;">
+                                <div class="progress-bar bg-warning" style="width: 55%"></div>
+                            </div>
+                            <small class="text-muted">55% conf.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('predictions_dashboard') }}" class="btn btn-outline-primary w-100">
+                    View All Predictions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Modal -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">AI Insights Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="configForm">
+                    <div class="mb-3">
+                        <label for="refreshInterval" class="form-label">Refresh Interval (minutes)</label>
+                        <select class="form-select" id="refreshInterval">
+                            <option value="1">1 minute</option>
+                            <option value="5" selected>5 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notification Types</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifySignals" checked>
+                            <label class="form-check-label" for="notifySignals">
+                                Trading Signals
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyPredictions" checked>
+                            <label class="form-check-label" for="notifyPredictions">
+                                Price Predictions
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyAlerts">
+                            <label class="form-check-label" for="notifyAlerts">
+                                Market Alerts
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confidenceThreshold" class="form-label">Minimum Confidence Threshold</label>
+                        <input type="range" class="form-range" id="confidenceThreshold" min="0" max="100" value="70">
+                        <div class="d-flex justify-content-between">
+                            <small>0%</small>
+                            <small id="confidenceValue">70%</small>
+                            <small>100%</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveConfiguration()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Update confidence threshold display
+document.getElementById('confidenceThreshold').addEventListener('input', function(e) {
+    document.getElementById('confidenceValue').textContent = e.target.value + '%';
+});
+
+function refreshInsights() {
+    location.reload();
+}
+
+function saveConfiguration() {
+    const config = {
+        refreshInterval: document.getElementById('refreshInterval').value,
+        notifications: {
+            signals: document.getElementById('notifySignals').checked,
+            predictions: document.getElementById('notifyPredictions').checked,
+            alerts: document.getElementById('notifyAlerts').checked
+        },
+        confidenceThreshold: document.getElementById('confidenceThreshold').value / 100
+    };
+    
+    // Save to localStorage for now
+    localStorage.setItem('aiInsightsConfig', JSON.stringify(config));
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('configModal'));
+    modal.hide();
+    
+    // Show success message
+    AIInsightsApp.showNotification('Configuration saved successfully', 'success');
+}
+
+// Load saved configuration
+document.addEventListener('DOMContentLoaded', function() {
+    const savedConfig = localStorage.getItem('aiInsightsConfig');
+    if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        
+        document.getElementById('refreshInterval').value = config.refreshInterval || 5;
+        document.getElementById('notifySignals').checked = config.notifications?.signals ?? true;
+        document.getElementById('notifyPredictions').checked = config.notifications?.predictions ?? true;
+        document.getElementById('notifyAlerts').checked = config.notifications?.alerts ?? false;
+        document.getElementById('confidenceThreshold').value = (config.confidenceThreshold || 0.7) * 100;
+        document.getElementById('confidenceValue').textContent = ((config.confidenceThreshold || 0.7) * 100) + '%';
+    }
+});
+</script>
+{% endblock %}

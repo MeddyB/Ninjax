@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Dashboard - Axiom Trade</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-running { background-color: #4CAF50; }
+        .status-stopped { background-color: #f44336; }
+        .btn {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Trading Dashboard</h1>
+            <p>Manage your trading bots and strategies</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Active Bots</h2>
+                <div id="bots-list">
+                    <p>Loading bots...</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>⚙️ Strategies</h2>
+                <div id="strategies-list">
+                    <p>Loading strategies...</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📈 Performance</h2>
+                <p>Total Profit: <strong>$214.75</strong></p>
+                <p>Total Trades: <strong>57</strong></p>
+                <p>Success Rate: <strong>78.9%</strong></p>
+            </div>
+            
+            <div class="card">
+                <h2>🔧 Quick Actions</h2>
+                <button class="btn" onclick="startAllBots()">Start All Bots</button>
+                <button class="btn" onclick="stopAllBots()">Stop All Bots</button>
+                <button class="btn" onclick="refreshData()">Refresh Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load bots data
+        async function loadBots() {
+            try {
+                const response = await fetch('/api/bots');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const botsList = document.getElementById('bots-list');
+                    botsList.innerHTML = data.data.bots.map(bot => `
+                        <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <span class="status-indicator status-${bot.status}"></span>
+                            <strong>${bot.name}</strong><br>
+                            <small>Profit: $${bot.profit} | Trades: ${bot.trades}</small>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load bots:', error);
+                document.getElementById('bots-list').innerHTML = '<p>Failed to load bots</p>';
+            }
+        }
+        
+        // Load strategies data
+        async function loadStrategies() {
+            try {
+                const response = await fetch('/api/strategies');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const strategiesList = document.getElementById('strategies-list');
+                    strategiesList.innerHTML = data.data.strategies.map(strategy => `
+                        <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>${strategy.name}</strong><br>
+                            <small>${strategy.description}</small>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load strategies:', error);
+                document.getElementById('strategies-list').innerHTML = '<p>Failed to load strategies</p>';
+            }
+        }
+        
+        // Quick actions
+        function startAllBots() {
+            alert('Starting all bots... (Feature coming soon)');
+        }
+        
+        function stopAllBots() {
+            alert('Stopping all bots... (Feature coming soon)');
+        }
+        
+        function refreshData() {
+            loadBots();
+            loadStrategies();
+        }
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBots();
+            loadStrategies();
+        });
+    </script>
+</body>
+</html>

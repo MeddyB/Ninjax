@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - Accueil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+            <h1 class="display-4">
+                <i class="fas fa-chart-line me-3"></i>
+                {{ app_name }}
+            </h1>
+            <p class="lead">
+                Plateforme de trading automatisé pour Axiom Trade
+            </p>
+            <hr class="my-4">
+            <p>
+                Gérez vos bots de trading, analysez les performances et optimisez vos stratégies.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Bots de Trading</h5>
+                <p class="card-text">
+                    Configurez et gérez vos bots de trading automatisés.
+                </p>
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-cog me-2"></i>
+                    Configurer
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Analyse de Performance</h5>
+                <p class="card-text">
+                    Analysez les performances de vos stratégies de trading.
+                </p>
+                <a href="#" class="btn btn-success">
+                    <i class="fas fa-analytics me-2"></i>
+                    Analyser
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-brain fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Insights IA</h5>
+                <p class="card-text">
+                    Obtenez des insights alimentés par l'intelligence artificielle.
+                </p>
+                <a href="#" class="btn btn-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Explorer
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Statut du Système
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="badge bg-success fs-6 mb-2">
+                                <i class="fas fa-check-circle me-1"></i>
+                                En ligne
+                            </div>
+                            <p class="small mb-0">Service Principal</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="badge bg-success fs-6 mb-2">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Connecté
+                            </div>
+                            <p class="small mb-0">API Axiom Trade</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="badge bg-warning fs-6 mb-2">
+                                <i class="fas fa-clock me-1"></i>
+                                En attente
+                            </div>
+                            <p class="small mb-0">Bots de Trading</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="badge bg-info fs-6 mb-2">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Synchronisé
+                            </div>
+                            <p class="small mb-0">Données de Marché</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh status every 30 seconds
+setInterval(function() {
+    // This would typically make an AJAX call to refresh status
+    console.log('Status refresh would happen here');
+}, 30000);
+</script>
+{% endblock %}

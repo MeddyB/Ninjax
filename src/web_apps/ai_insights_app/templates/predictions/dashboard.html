@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-crystal-ball me-2"></i>AI Predictions Dashboard</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshPredictions()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <a href="{{ url_for('price_predictions') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line me-1"></i>Price Predictions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Models Status Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-robot me-2"></i>AI Models Status
+                </h5>
+                <a href="{{ url_for('models_management') }}" class="btn btn-sm btn-outline-primary">Manage Models</a>
+            </div>
+            <div class="card-body">
+                {% if models_status and models_status.models %}
+                    <div class="row">
+                        {% for model in models_status.models %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-{{ 'success' if model.status == 'ready' else 'warning' if model.status == 'training' else 'secondary' }}">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-{{ 'brain' if model.type == 'LLM' else 'chart-line' if model.type == 'ML' else 'eye' }} fa-2x mb-2 text-{{ 'success' if model.status == 'ready' else 'warning' if model.status == 'training' else 'secondary' }}"></i>
+                                        <h6 class="card-title">{{ model.name }}</h6>
+                                        <span class="badge bg-{{ 'success' if model.status == 'ready' else 'warning' if model.status == 'training' else 'secondary' }} mb-2">
+                                            {{ model.status|title }}
+                                        </span>
+                                        {% if model.accuracy %}
+                                            <p class="mb-0"><strong>Accuracy:</strong> {{ model.accuracy }}%</p>
+                                        {% endif %}
+                                        <small class="text-muted">{{ model.type }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>No AI models available
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Recent Predictions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_predictions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Symbol</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                    <th>Timeframe</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prediction in recent_predictions %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-{{ 'primary' if prediction.type == 'price' else 'info' if prediction.type == 'sentiment' else 'warning' }}">
+                                                {{ prediction.type|title }}
+                                            </span>
+                                        </td>
+                                        <td><strong>{{ prediction.symbol }}</strong></td>
+                                        <td>{{ prediction.prediction }}</td>
+                                        <td>
+                                            <div class="progress" style="width: 80px; height: 20px;">
+                                                <div class="progress-bar bg-{{ 'success' if prediction.confidence > 0.7 else 'warning' if prediction.confidence > 0.5 else 'danger' }}" 
+                                                     style="width: {{ prediction.confidence * 100 }}%">
+                                                    {{ "%.0f"|format(prediction.confidence * 100) }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ prediction.timeframe }}</td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ moment(prediction.created_at).fromNow() if moment else prediction.created_at }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewPredictionDetails('{{ prediction.id }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>No recent predictions available
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Categories -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column">
+                <i class="fas fa-dollar-sign fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Price Predictions</h5>
+                <p class="card-text flex-grow-1">AI-powered price forecasts for major cryptocurrencies</p>
+                <a href="{{ url_for('price_predictions') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line me-1"></i>View Predictions
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column">
+                <i class="fas fa-heart fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Sentiment Analysis</h5>
+                <p class="card-text flex-grow-1">Market sentiment predictions based on multiple data sources</p>
+                <a href="{{ url_for('sentiment_predictions') }}" class="btn btn-success">
+                    <i class="fas fa-smile me-1"></i>View Sentiment
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column">
+                <i class="fas fa-wave-square fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Volatility Forecast</h5>
+                <p class="card-text flex-grow-1">Predict market volatility and risk levels</p>
+                <a href="{{ url_for('volatility_predictions') }}" class="btn btn-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>View Volatility
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column">
+                <i class="fas fa-cogs fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Model Management</h5>
+                <p class="card-text flex-grow-1">Configure and monitor AI prediction models</p>
+                <a href="{{ url_for('models_management') }}" class="btn btn-info">
+                    <i class="fas fa-tools me-1"></i>Manage Models
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function refreshPredictions() {
+    location.reload();
+}
+
+function viewPredictionDetails(predictionId) {
+    // TODO: Implement prediction details modal or redirect
+    alert(`Viewing details for prediction: ${predictionId}`);
+}
+
+// Auto-refresh predictions every 5 minutes
+setInterval(function() {
+    // Only refresh if user is still on the page
+    if (document.visibilityState === 'visible') {
+        fetch('/api/predictions/recent')
+            .then(response => response.json())
+            .then(data => {
+                // Update recent predictions table if needed
+                console.log('Updated predictions:', data);
+            })
+            .catch(error => {
+                console.error('Error updating predictions:', error);
+            });
+    }
+}, 300000); // 5 minutes
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Service Manager - Options</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Flask Service Manager</h1>
+            <p>Configuration de l'extension</p>
+        </header>
+
+        <main class="main">
+            <section class="section">
+                <h2>Configuration du Service</h2>
+                <div class="form-group">
+                    <label for="api-url">URL de l'API Backend:</label>
+                    <input type="url" id="api-url" placeholder="http://localhost:5000">
+                </div>
+                <div class="form-group">
+                    <label for="check-interval">Intervalle de vérification (secondes):</label>
+                    <input type="number" id="check-interval" min="10" max="300" value="30">
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Synchronisation des Tokens</h2>
+                <div class="form-group">
+                    <label for="token-sync-interval">Intervalle de synchronisation (secondes):</label>
+                    <input type="number" id="token-sync-interval" min="10" max="300" value="30">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="auto-start-sync">
+                        Démarrer automatiquement la synchronisation des tokens
+                    </label>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Notifications</h2>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enable-notifications" checked>
+                        Activer les notifications
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="notification-timeout">Durée d'affichage des notifications (ms):</label>
+                    <input type="number" id="notification-timeout" min="1000" max="10000" value="5000">
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Développement</h2>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="debug-mode">
+                        Mode debug (logs détaillés)
+                    </label>
+                </div>
+            </section>
+
+            <div class="actions">
+                <button id="save-btn" class="btn btn-primary">Sauvegarder</button>
+                <button id="reset-btn" class="btn btn-secondary">Réinitialiser</button>
+            </div>
+
+            <div id="status-message" class="status-message hidden"></div>
+        </main>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>
